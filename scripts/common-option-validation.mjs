@@ -34,6 +34,48 @@ function validateLayerShareContent(options, at) {
   });
 }
 
+const connectorPositions = new Set([
+  'top-left', 'top-right', 'bottom-left', 'bottom-right', 'point',
+  'outer-start', 'outer-end', 'inner-start', 'inner-end'
+]);
+
+function validateConnectorTarget(options, at, elements) {
+  const failures = [];
+  const target = options.target;
+  if ('data' in options || 'points' in options) failures.push(`${at}: target must not coexist with data/points`);
+  if (!object(target)) return [...failures, `${at}.target: must contain from/to endpoints`];
+  for (const side of ['from', 'to']) {
+    const endpoint = target[side];
+    const path = `${at}.target.${side}`;
+    if (!object(endpoint)) {
+      failures.push(`${path}: endpoint must be an object`);
+      continue;
+    }
+    if (!(text(endpoint.chartId) || typeof endpoint.chartId === 'number' && Number.isFinite(endpoint.chartId))) {
+      failures.push(`${path}.chartId: requires a non-empty string or finite number`);
+    } else if (!elements.some(element => element?.type === 'chart' && element.id === endpoint.chartId)) {
+      failures.push(`${path}.chartId: must reference a chart in this canvas`);
+    }
+    if (!object(endpoint.selector) || !Object.keys(endpoint.selector).length ||
+        !Object.values(endpoint.selector).every(value => value === null || typeof value === 'string' ||
+          typeof value === 'boolean' || typeof value === 'number' && Number.isFinite(value))) {
+      failures.push(`${path}.selector: requires non-empty business fields with scalar values`);
+    }
+    if (endpoint.measure !== undefined && !text(endpoint.measure)) failures.push(`${path}.measure: must be a non-empty field name`);
+    const position = endpoint.position;
+    if (!connectorPositions.has(position) && !(object(position) && Object.keys(position).length === 1 &&
+        Number.isInteger(position.vertex) && position.vertex >= 0)) {
+      failures.push(`${path}.position: unsupported semantic anchor`);
+    }
+  }
+  if (options.lineType !== undefined && !['line', 'hv', 'vh'].includes(options.lineType)) {
+    failures.push(`${at}.lineType: must be line/hv/vh`);
+  }
+  if (options.style !== undefined && !object(options.style)) failures.push(`${at}.style: must be an object`);
+  if (options.zIndex !== undefined && !Number.isFinite(options.zIndex)) failures.push(`${at}.zIndex: must be finite`);
+  return failures;
+}
+
 export function validateCommonOption(commonOption, location = 'commonOption') {
   const failures = [];
   if (!Array.isArray(commonOption?.elements) || !commonOption.elements.length) {
@@ -60,7 +102,7 @@ export function validateCommonOption(commonOption, location = 'commonOption') {
       if (!object(position) || !['x', 'y', 'width', 'height'].every(key => Number.isFinite(position[key])) || position.width <= 0 || position.height <= 0) {
         failures.push(`${at}: invalid position`);
       }
-    } else if (commonOption.elements.length > 1) {
+    } else if (commonOption.elements.length > 1 && !(element.type === 'chartConnectorLine' && object(element.options) && 'target' in element.options)) {
       failures.push(`${at}: multiple elements require explicit positions`);
     }
     if ('rect' in element || 'attribute' in element) failures.push(`${at}: commonOption element must not use rect/attribute`);
@@ -86,6 +128,9 @@ export function validateCommonOption(commonOption, location = 'commonOption') {
       } else {
         failures.push(`${at}: unsupported sourceType ${options.sourceType}`);
       }
+    }
+    if (element.type === 'chartConnectorLine' && 'target' in options) {
+      failures.push(...validateConnectorTarget(options, `${at}.options`, commonOption.elements));
     }
     const config = options.config;
     if (config !== undefined) {

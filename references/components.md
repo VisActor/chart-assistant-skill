@@ -192,7 +192,9 @@ interface LineAttribute {
 
 ## 6. ChartConnectorLine
 
-它连接两张图表中的两个数据图元，与普通画布线不同：
+它连接两张图表中的两个数据图元，与普通画布线不同。首次创建使用 [语义连接器 target](semantic-chart-connectors.md)，将两图和连接器一次生成；运行时取得真实锚点，模型不生成 datum 或 points。
+
+以下仅用于已有手动配置的兼容编辑，不是首次生成格式：
 
 ```ts
 interface ChartConnectorLineAttribute {
@@ -209,11 +211,11 @@ interface ChartConnectorLineAttribute {
 }
 ```
 
-`chartId + data + position + type` 共同定位端点。`data` 必须来自两张已物化图表的实际 datum；筛选、映射、同步或图表 ID 变化后需要重新解析。业务宿主若没有图元 picker/连接器编译能力，只能保留已有连接器，不能从两行原始数据离线承诺生成正确 points。
+上面的 `data + points` 是已有手动配置的兼容结构；实际 datum 由运行时取得。转换成功后，图表更新、转置、移动与删除继续走既有手动连接器逻辑，target 不持续接管端点。
 
 ## 7. 生成与编辑边界
 
 - 从零创建 chart/table/text/basic graphic 可用 `commonOption`，让运行时生成 element ID 和缺省属性。
-- 从零创建带连接关系的 line/chartConnectorLine，必须已有稳定目标 element ID；需要图元端点的 connector 还必须先物化图表。
+- 从零创建普通 line 的连接关系，必须有稳定目标 element ID；chartConnectorLine 使用语义 target 引用同画布 chart ID，内部等待图元就绪后创建，不要求模型先物化。
 - 编辑已有元素只深合并目标 attribute，保留未知兼容字段、连接引用、group 和 zIndex。
 - Skill 不承诺任意插件 element type；未知 type 只可原样透传，不根据 `[key:string]:any` 发明结构。

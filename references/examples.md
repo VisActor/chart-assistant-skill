@@ -76,3 +76,10 @@ Examples 是协议样例，不是可无条件复制的模板。先读每个文�
 - [waterfall-decrease-semantic-colors.json](../examples/waterfall-decrease-semantic-colors.json)：e总计独立，正输入映射扣减色。
 
 - [same-color-bar-label.json](../examples/same-color-bar-label.json)：单维单指标横条，显式同色重点的柱外标签例外；灰色图形与灰色文字分别配置，华南柱及标签保留橙色。多维必须物化身份，不套用此例。
+
+## 跨图表语义连接器
+
+- [橙子饼图与品种堆叠柱](../examples/semantic-connector-orange-breakdown.json)：两条 `vh` 连接器，覆盖指标系列定位；61 与 67 不作数值一致的拆解。
+- [PC 环图与横向条形图](../examples/semantic-connector-pc-breakdown.json)：两条 `hv` 连接器，覆盖空字段名和横向锚点映射。
+
+两例可一次提交 commonOption，内部等待图元就绪后转成手动配置。生成与错误边界见 [semantic-chart-connectors.md](semantic-chart-connectors.md)。

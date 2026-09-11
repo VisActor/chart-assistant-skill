@@ -53,5 +53,5 @@
       }
     ]
   },
-  "note": "基础画布元素可直接首次创建；line.startConnect.target 引用本 record 中稳定 element id。图表数据连接器仍需 runtime datum/picker。"
+  "note": "基础画布元素可直接首次创建；line.startConnect.target 引用本 record 中稳定 element id。首次创建图表数据连接器使用 options.target，引用同画布 chart ID 并填写业务 selector、measure、position；无需模型取得 runtime datum/picker，完整双图示例见 semantic-connector-orange-breakdown.json。"
 }

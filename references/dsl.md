@@ -335,7 +335,7 @@ interface CommonOptionElementShell {
 }
 ```
 
-`position` 在类型上可省略，但多个元素从零生成时必须显式布局，不能依赖多个相同的默认矩形。`id` 可由运行时生成；若调用方需要跨元素引用，则从一开始生成 record 内唯一的稳定 UUID。
+`position` 在类型上可省略，但多个元素从零生成时必须显式布局，不能依赖多个相同的默认矩形。唯一例外是使用 [语义 target](semantic-chart-connectors.md) 的 `chartConnectorLine`，其端点由引用图表计算，无需矩形布局。`id` 可由运行时生成；若调用方需要跨元素引用，则从一开始生成 record 内唯一的稳定 UUID。
 
 反向规则同样成立：`browserData`/`ILayerData` 元素使用 `rect + attribute`，不能把 `position + options` 原样塞进保存态。
 

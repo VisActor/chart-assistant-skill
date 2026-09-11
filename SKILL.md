@@ -61,7 +61,8 @@ description: 使用图表助手 DSL 创建、编辑、解释、校验和交付�
 
 - 总流程、输入判断和交付检查：读 [workflow.md](references/workflow.md)。
 - 完整 DSL、公共输入与保存态：读 [dsl.md](references/dsl.md)。
-- 表格、文本、图形、普通线和图表连接器：读 [components.md](references/components.md)。
+- 表格、文本、图形、普通线和已有图表连接器：读 [components.md](references/components.md)。
+- 首次创建跨图表连接器：读 [semantic-chart-connectors.md](references/semantic-chart-connectors.md)，生成业务 target，运行时一次转成手动配置；不要求模型先取得图元 datum 或 points。
 - commonOption 优先级、ID 生命周期、换数据/换源/换图等跨字段逻辑：读 [special-logic.md](references/special-logic.md)。
 - 标准数据、列格式、筛选、排序和 FormatConfig：读 [data-and-formatting.md](references/data-and-formatting.md)。
 - `modelSpec` 组件身份、完整组件字段和 series 样式：读 [model-spec.md](references/model-spec.md)。
