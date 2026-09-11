@@ -1,0 +1,36 @@
+{
+  "kind": "materialized-model-spec-patch",
+  "precondition": "identity 来自当前 browserData/runtime；不可复制到另一张图",
+  "modelSpec": [
+    {
+      "id": "axis-left",
+      "specKey": "axes",
+      "specIndex": 0,
+      "spec": { "type": "linear", "zero": true, "title": { "visible": true, "text": "销售额（万元）" } }
+    },
+    {
+      "id": "axis-bottom",
+      "specKey": "axes",
+      "specIndex": 1,
+      "spec": { "type": "band", "label": { "autoHide": true } }
+    },
+    {
+      "id": "legend-discrete",
+      "specKey": "legends",
+      "specIndex": 0,
+      "spec": { "type": "discrete", "visible": true, "orient": "bottom", "position": "start" }
+    },
+    {
+      "id": "chart_title",
+      "specKey": "title",
+      "specIndex": 0,
+      "spec": { "visible": true, "text": "产品 A 增速领先产品 B", "textStyle": { "fontSize": 20, "fontWeight": 600 } }
+    },
+    {
+      "id": "series-sales",
+      "specKey": "series",
+      "specIndex": 0,
+      "spec": { "seriesLabel": { "visible": true, "position": "end" } }
+    }
+  ]
+}

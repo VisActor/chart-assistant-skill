@@ -1,0 +1,4 @@
+interface:
+  display_name: "图表助手"
+  short_description: "创建、编辑、校验和交付图表助手图表与飞书文档卡片"
+  default_prompt: "使用 $chart-assistant 处理图表助手 DSL、内置或风神图表、URL 数据源同步、MBB 制图规范，以及新建飞书文档或向已有文档插入图表助手卡片。"
