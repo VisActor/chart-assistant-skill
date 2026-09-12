@@ -1,5 +1,9 @@
 # Examples 使用索引
 
+## 单项与分组语义定位
+
+[业务 target 样例](../examples/semantic-element-targets.json) 包含单柱与标签、完整指标组、轴标签与网格线的 Prompt、基础 commonOption 和 patch。样式沿旧字段；首次加载将 patch 合并到 options.config，已有实例只提交 patch。运行时补齐内部身份后再保存，不能把基础图的出现当成单项编辑已完成。
+
 ## 虚实折线与排序
 
 - [单对象虚实折线](../examples/solid-dashed-line.json)：3—9月销售数据，5月共享接点，6—9月虚线；显式关闭系列标签和图例，用标题次行说明线型。身份只适用于此标准宽表 line 结构，验证范围见 [专题](solid-dashed-line.md)。

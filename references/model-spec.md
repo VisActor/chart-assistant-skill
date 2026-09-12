@@ -1,6 +1,6 @@
 # `modelSpec` 完整写入契约
 
-`modelSpec` 是图表内部 VChart model 的持久化增量，不是任意配置袋。LLM 只有在能确定目标组件身份时才应直接生成或修改它。
+`modelSpec` 是图表内部 VChart model 的持久化增量，不是任意配置袋。已有原生身份可直接复用；没有身份时，受支持的 series/axes/legends 可使用 [业务 target 输入](element-editing.md#0-语义-target只补现有-dsl-的定位)，实例编译后仍保存原结构。
 
 ## 1. 组件身份：`id`、`specKey`、`specIndex`
 
@@ -40,7 +40,7 @@ LLM 写入策略：
 - 从可信导出 fixture 派生：复用 fixture 的 identity，若改变组件数量/顺序则重新物化。
 - 从零创建内置图表：优先输出 `commonOption`，让模板生成真实 model 和 layout；物化后再读取 `browserData` 做二次编辑。
 - 已知完整 VChart spec：可使用其中显式组件 `id`，`specIndex` 仍按规范化后的实际数组顺序确定。
-- 无法确定真实 `id`：不要猜；返回“需运行时物化/读取后再补 modelSpec”。`${specKey}-${specIndex}` 只可作为受控转换器的兼容回退，不是通用生成规则。
+- 无法确定真实 `id`：不要猜；受支持路径生成 `{specKey,target,spec}`，不同时写 id/specIndex；不支持的来源或组件明确说明需读取身份。`${specKey}-${specIndex}` 只可作为受控转换器的兼容回退，不是通用生成规则。
 
 ## 2. 公共 JSON-safe 子类型
 

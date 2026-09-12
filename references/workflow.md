@@ -41,7 +41,7 @@
 
 1. 构建标准数据；固定 columns/rows。
 2. 写 mappingSpec。
-3. 新建业务标注按 [semantic-marker-anchors.md](semantic-marker-anchors.md) 写 target，可与 commonOption 一次生成，不等待 series ID。旧配置/显式自由几何才使用旧定位；需要 modelSpec 或单元素 runtime identity 的编辑仍先物化 readback，再生成二阶段 patch。
+3. 新建业务标注按 [semantic-marker-anchors.md](semantic-marker-anchors.md) 写 target，可与 commonOption 一次生成，不等待 series ID。旧配置/显式自由几何才使用旧定位；modelSpec 或单元素样式编辑按 [语义元素定位](element-editing.md#0-语义-target只补现有-dsl-的定位) 生成 target，由支持此入口的实例补齐身份；旧宿主仍先物化 readback。
 4. URL-backed 时写 source/sourceBinding。
 5. 新建默认应用 MBB 的全部非配色规则：显式生成 rich 主/次级标题、值轴标题内容、网格、标签、图例，其余组件字体字号继承图表助手主题，以及符合当前分析目标的其他规则。模型可从原生/default、base、McKinsey、BCG绿、Bain候选选择配色，无需MBB关键词；无依据时原生回退，同组图稳定。用户明确样式优先，已有图表只改用户要求的部分。
 6. 对保存态序列化 standard value，校验可逆。

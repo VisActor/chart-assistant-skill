@@ -7,7 +7,57 @@
 3. 组件内部图元：`styleMap[key]`，key 由运行时渲染结构或数据身份生成。
 4. series 数据 mark：`attribute.markStyle[]`，通过 series + mark + datum 字段匹配，不靠数组位置。
 
-任何需要单元素 key 的编辑，若没有已有 `browserData` 或运行时 pick/materialize 结果，都不能靠 LLM 猜 ID。业务宿主没有 selection compiler，因此应回退为全局/分组配置，或明确说明无法稳定完成该单元素编辑。
+没有已有身份时，按下面的语义输入生成业务 `target`，由图表实例解析后交给原编辑逻辑。不能猜内部 key，也不能把单项请求扩大成整组或全部。
+
+## 0. 语义 target：只补现有 DSL 的定位
+
+模型保留原来的样式字段，在现有配置位置增加业务身份：
+
+| 原位置 | 生成方式 | 实例编译后的保存结构 |
+| --- | --- | --- |
+| `modelSpec[]` | `{specKey,target,spec}`，不同时写 `id/specIndex` | 原生组件 identity + 原 `spec` |
+| `markStyle[]` | `{markName,target,style}`，可保留覆盖记录 `id` | 原生系列、图元及 `itemKeys/itemKeyMap` |
+| 任一受支持 `styleMap` | `[{target,value}]`；`value` 仍是该 map 的原配置 | `{[实际key]:value}` |
+| `dataGroupSpec` | `[{target,value}]`；`value` 仍是原分组配置 | `{[groupKey]:value}` |
+
+`target` 不包含 `chartId/kind/role/scope`，图表与目标种类由外层位置确定。数据目标使用 `selector:{原始字段:原始值}` 和可选 `measure:"原始指标列名"`；父 series 可只用 measure，子 styleMap 继承父系列。不得使用 Marker 的 `match/metric` 替代 `selector/measure`。
+
+例如放入 `options.config`（已有图则作为对应 chart 的输入 patch）：
+
+```json
+{
+  "markStyle":[{"markName":"bar","target":{"selector":{"季度":"Q4"},"measure":"销售额"},"style":{"fill":"#3370FF"}}],
+  "modelSpec":[{"specKey":"series","target":{"measure":"销售额"},"spec":{"label":{"styleMap":[{"target":{"selector":{"季度":"Q4"}},"value":{"style":{"fill":"#E53935","fontWeight":"bold"}}}]}}}]
+}
+```
+
+分组示例：`{"dataGroupSpec":[{"target":{"measure":"销售额"},"value":{"bar":{"style":{"fill":"#3370FF"}},"label":{"style":{"fontWeight":"bold"}}}}]}`。这会修改销售额完整组，不能额外加 `季度:Q4` 后仍让编译器扩大到全部季度。
+
+可选定位字段按原路径区分：
+
+| 路径 | target |
+| --- | --- |
+| `modelSpec` series | `selector?`、`measure?`，至少一项 |
+| `modelSpec` axes | `field` 或 `measure`，可用 `orient` 消歧 |
+| `modelSpec` legends | `field` 或 `measure` |
+| 普通标签、总计标签 styleMap | `selector`、可选 `measure` |
+| 层级节点标签与多层轴标签 | `path:[{field:"区域",value:"华东"},{field:"产品",value:"产品A"}]`，字段顺序必须与当前层级一致 |
+| 轴标签、网格 styleMap | `{value:原始tick值}`，必须已渲染 |
+| 图例 item styleMap | `{value:原始图例值}` 或 `{measure:指标名}`，二选一 |
+| `seriesLabel.label.styleMap` | `selector?`、`measure?`、可选 `position:"start"或"end"`；受管模板取 styleKey，普通系列沿现有节点身份 |
+| `mekkoLabel.styleMap` | 分类 `selector`，可选 `measure` |
+| `barLink.spec.styleMap` | `{from:业务selector,to:业务selector,measure?,part:"line"或"area"或"label"}` |
+| axes `breaks[]` 的已有条目 | `{target:{range:[区间起值,区间终值]},...原条目增量}`，只定位已存在截断 |
+
+当前数据字段适配限定已核验的 standard 来源；其他来源缺乏映射时明确返回 `UNSUPPORTED_SOURCE`，不猜字段。层级业务 `path` 使用按原始字段顺序排列的 `{field,value}` 数组，不将树节点显示文本视为唯一身份；只有来源及实际节点都可验证时才生成 key。父层级 series 用 measure 定位，节点条件放子标签 path。轴刻度与图例项依赖当前可见组件；未开启标签、不存在网格 tick 或多目标歧义不能靠新增索引处理。
+
+模式仍沿现有编辑器：饼图扇区和漏斗阶段走 `dataGroupSpec`；漏斗普通/转换标签走组配置，转换标签使用 `transformLabel`；漏斗外部标签不支持单标签编辑，只保留已有整体 `outerLabel` 配置。线/面积本体没有单图形模式，数据点可以用 `markStyle` 的 `point`。不能把不支持的 markStyle 偷换成分组通道。
+
+旧 ID 和对象 map 继续兼容；同一 map 输入不能混用对象与数组。同一条 markStyle 的 target 不与原生匹配字段混用，已有覆盖记录 id 不得重定向到另一对象。重复原生 key、源类型碰撞、目标不存在或范围扩大均返回诊断；失败不能忽略后声称编辑完成。
+
+首次加载时宿主隔离语义项，待实例就绪编译；已有实例可调用 `resolveSemanticTargets(patch)`，仅当 `success:true` 才把返回的原生 patch 交给原有更新方法。成功保存只保留原生 ID/map；不持续保存 target 或随数据更新自动重放。缺少此入口的宿主仍可交付语义配置并说明运行时尚未执行，不能假定旧宿主认识数组。
+
+完整生成样例见 [semantic-element-targets.json](../examples/semantic-element-targets.json)。这些是现有编辑字段的输入扩展，不改变 Marker 或通用连接线的 target/更新行为。
 
 ## 1. Axis label
 
@@ -26,7 +76,7 @@ key 策略：
 - 普通单层轴：当前渲染 label 在父容器中的零基索引字符串，如 `"0"`、`"3"`。
 - 多层轴：`${layerIndex}-${labelIndex}`，两个索引均来自当前渲染节点层级。
 - key 是渲染身份，不是轴值。筛选、排序、分页、多层级展开、数据同步后可能改变。
-- 编辑已有图表时复用现有 styleMap key；新建时必须让运行时选中轴标签后返回 key。
+- 编辑已有图表时复用现有 styleMap key；新建时可写 `styleMap:[{target:{value:原始tick值},value:原配置}]`，由实例解析 key。
 
 单个轴标签改文案只影响显示，不改数据和 mapping；不应利用它伪造数据含义。若要按轴值稳定格式化，应改整体 `formatConfig`，而不是批量猜索引。
 
@@ -86,7 +136,7 @@ type LabelItem = {
 - range bar：seriesField + range 的两个端点字段。
 - 无法取得数据身份时回退为 `${labelGroupIndex}-${textIndex}`。
 
-这些规则依赖模板转换后的真实 series 字段；值本身含 `_` 时还可能产生碰撞。因此 LLM 不应从原始数据独立复刻 key。推荐让宿主返回 `getLabelStyleMapIds` 结果，保存首选数据 key并保留兼容 alias。
+这些规则依赖模板转换后的真实 series 字段；值本身含 `_` 时还可能产生碰撞。因此 LLM 不应从原始数据独立复刻 key。语义输入由宿主调用现有 `getLabelStyleMapIds` 链路生成 key；已有身份仍可直接保存首选数据 key。
 
 `displayType: all|min|max|minMax|firstLast` 是整体选择策略；它比写大量 `visible:false` 更稳定。单点 `forceVisible` 只用于防重叠后仍必须出现的关键标签。
 
@@ -211,7 +261,7 @@ interface IMarkStyle {
 
 上例颜色仅演示原生 clarity-light 的 focus。宿主已有主色或用户颜色时继承其语义，不强刷该色；新图可按表达需要选择内置配色，用户明确颜色和已有编辑优先。focus/compare/context/favorable/unfavorable/warning 按 [语义色](mbb.md#7-语义色) 选择，并写入支持的 style 字段，不把角色名当成新增 DSL key。
 
-所有新图均适用的“突出最高柱/最后一期/关键点”属于单 datum markStyle，但只有结论支持时才应用。先由 LLM 根据业务结论确定目标 datum，再由 runtime 提供 match；两步不能颠倒。目标恰好位于数组末尾不代表可以用 `seriesIndex` 或 datum index 直接命中，`seriesIndex` 只定位系列。
+所有新图均适用的“突出最高柱/最后一期/关键点”属于单 datum markStyle，但只有结论支持时才应用。先由 LLM 根据业务结论确定目标 selector/measure，再由 runtime 解析匹配字段；两步不能颠倒。目标恰好位于数组末尾不代表可以用 `seriesIndex` 或 datum index 直接命中，`seriesIndex` 只定位系列。
 
 修改优先级：`markStyle` > `dataGroupSpec[group]` > `dataGroupSpec.EDITOR_ALL_DATA_GROUP` > `modelSpec.series` > theme/template。删除一条单 mark 覆盖使用命令态 `{markStyle:{[id]:false}}`；持久化完成后仍应是数组，不把 false map 保存为最终 DSL。
 
@@ -224,7 +274,7 @@ interface IMarkStyle {
 3. 为该柱应用 `markName:"bar"`，为其普通值标签应用 `markName:"text"`，各用独立覆盖 ID、相同已验证身份；不写全组红色、不改预算及其他柱。若显式同色与默认柱内位置冲突，按 [标签可读性](labels.md#同色标签可读性) 处理。
 4. 回读确认两个覆盖及原始数据都保留；排序、筛选或同步后是否仍唯一命中属于另行运行验证，不凭配置声称通过。
 
-缺少物化/picker 或可用身份回读时，继续提供可完成的基础配置，但明确“基础图已生成；指定单柱及标签高亮待取得运行时身份”，不要猜身份、静默漏项或宣称要求已全部完成。当前 `markStyle` 没有接受原始业务 `target.match` 的公共语义入口；marker 的业务 target 能力不能推广给 markStyle。模型评测应分别覆盖有身份和无身份两种条件。
+旧宿主缺少语义解析方法且没有物化/picker 或可用身份回读时，明确“指定单柱及标签高亮尚未完成”，不要猜身份、静默漏项或宣称要求已全部完成。支持本节语义扩展的宿主可直接接收 `markStyle[].target.selector/measure`，不必让模型取得内部匹配字段。`target.match` 仍不是此通道字段，不能混用 Marker 语法。
 
 ## 11. Marker 内部元素
 
