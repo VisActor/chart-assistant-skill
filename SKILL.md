@@ -71,7 +71,7 @@ description: 使用图表助手 DSL 创建、编辑、解释、校验和交付�
 - 单个轴标签、网格线、图例项、数据标签和 mark 的定位与编辑：读 [element-editing.md](references/element-editing.md)。
 - 柱/条系列连接线、标签和单条 line/area/label key：读 [bar-link.md](references/bar-link.md)。
 - 标注存储位置、共享样式、趋势线与自由几何：读 [markers.md](references/markers.md)。
-- 新建差异、参考线、区域、点或四象限标注：先读 [semantic-marker-anchors.md](references/semantic-marker-anchors.md)，按业务 `target` 生成；仅要求解释各区策略时将长说明放在紧邻图表的正文；明确要求图内四象限名称时，按其中“四角名称”规则生成独立无引线文本，不能当成气泡数据点说明。共享样式再读 markers；已有差异 coordinates 的定位维护按需读 [legacy-marker-coordinates.md](references/legacy-marker-coordinates.md)。
+- 新建差异、参考线、区域、点或四象限标注：先读 [semantic-marker-anchors.md](references/semantic-marker-anchors.md)，按业务 `target` 生成；差异标注按其中「按参考图判别差异类型」结合形态、比较对象和标签口径定类型；无参考图时才按比较对象语义默认；仅要求解释各区策略时将长说明放在紧邻图表的正文；明确要求图内四象限名称时，按其中“四角名称”规则生成独立无引线文本，不能当成气泡数据点说明。共享样式再读 markers；已有差异 coordinates 的定位维护按需读 [legacy-marker-coordinates.md](references/legacy-marker-coordinates.md)。
 - 新建点说明或修复点标注重叠：读 [point-marker-layout.md](references/point-marker-layout.md)，生成文字偏移与引线配置；保留业务 target 和用户已有位置。
 - 组件编辑字段、优先级和能力矩阵：读 [editing.md](references/editing.md)。
 - 模板总表与选图约束：读 [templates.md](references/templates.md)。

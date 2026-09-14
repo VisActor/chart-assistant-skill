@@ -27,8 +27,8 @@ interface ChartAttribute {
 | `v-line`                           | `marker.markLine[]`      | 笛卡尔数值/时间/分类轴的垂直值线                       |
 | `reference-line`                   | `marker.markLine[]`      | 按 target.field/value 定位；方向由实际字段轴决定       |
 | `growth-line`                      | `marker.markLine[]`      | 完整差异 marker 图；Mekko 禁用                         |
-| `total-diff-line`                  | `marker.markLine[]`      | 完整差异 marker 图；比较两个总量                       |
-| `hierarchy-diff-line`              | `marker.markLine[]`      | 完整差异 marker 图；比较堆叠层级/段                    |
+| `total-diff-line`                  | `marker.markLine[]`      | 完整差异 marker 图；比较两个总量/整柱端点              |
+| `hierarchy-diff-line`              | `marker.markLine[]`      | 完整差异 marker 图；比较层级/段：堆叠层、分组柱同类别两系列、瀑布阶段贡献段 |
 | `partition-line`                   | `marker.markLine[]`      | scatter/风神 scatter                                   |
 | `mark-area`                        | `marker.markArea[]`      | 支持坐标区域的图                                       |
 | `mark-point`                       | `marker.markPoint[]`     | 具备可定位绘图区的图；其他 marker 不支持时 UI 仅保留它 |
@@ -36,6 +36,8 @@ interface ChartAttribute {
 | `partition-area`                   | 顶层 `partitionArea[id]` | scatter 象限/区域                                      |
 | `quadrant`                         | `marker.quadrant` 单对象 | standard scatter/bubble 两阈值四象限                   |
 | `vertical-area`, `horizontal-area` | 内部方向语义             | 不作为独立数组；由 `mark-area` 坐标表达                |
+
+按参考图还原 `total-diff-line`/`hierarchy-diff-line`/`growth-line` 时，默认形态是强佐证，不单独决定类型：纵向图中 total 默认是跨接两端点上方的顶部横括号（整线实线、仅末端单箭头），hierarchy 默认是端点侧面的差异竖段（三段折线、两侧虚线中间实线、首尾双符号），growth 默认是跨时间类别的直实线斜线（非阶梯横括号）且标签默认 `CAGR`；横向条形图方向对应旋转。斜线还须核对比较对象和年化口径，层份额/段值不能因形态改为 growth。无参考图时才按语义默认（层级比较→hierarchy、总量比较→total）。完整判别表见 [按参考图判别差异类型](semantic-marker-anchors.md#按参考图判别差异类型)。
 
 Scatter/直方图属于 value-chart 路径，不支持 growth/total/hierarchy diff；scatter 额外支持 partition。非完整差异集合、非 value-chart 的其他模板默认只承诺 point。图表助手运行时内部负责最终 addable 校验；模型不调用这一内部方法，也不以获取该方法为生成前置条件。
 
@@ -99,8 +101,10 @@ type VLine = CommonMarker & { name: 'v-line'; x: number | string };
 | `offset` | 新建 `growth-line` 的展示偏移：有限像素数值或百分比字符串，运行时沿指标轴派生两端偏移，保留业务目标。 |
 | `coordinatesOffset` | 旧 coordinates 配置中的两端 `{x, y}` 展示偏移，也是运行时派生字段；数值表示像素，百分比字符串表示相对绘图区的偏移。新建 target 不直接填写此字段。 |
 | `type: "type-step"` | `total-diff-line`、`hierarchy-diff-line` 的折线连接类型；旧 spec 必须声明，语义 target 的生成规则见语义文档。 |
-| `connectDirection` | 两类 step 差异的连接方向：`top`、`bottom`、`left`、`right`。方向属于展示配置，不用于指定比较对象或轴绑定。 |
+| `connectDirection` | 两类 step 差异的连接方向：`top`、`bottom`、`left`、`right`。方向属于展示配置，不用于指定比较对象或轴绑定。默认值随图方向与差异类型不同：纵向图 total 默认 `top`、hierarchy 默认 `right`；横向条形图相反，total 默认 `right`、hierarchy 默认 `top`。 |
 | `expandDistance` | 两类 step 差异沿连接方向的扩展距离；公共类型为字符串，百分比（如 `"30%"`）相对于绘图区宽度/高度。 |
+
+两类 step 差异的默认形态即类型身份，按参考图直接定型：纵向图中 `total-diff-line` 是跨接两端点上方的顶部横括号，整线实线（cornerRadius 6）、仅 endSymbol 单箭头；`hierarchy-diff-line` 是端点侧面的差异竖段，multiSegment 三段折线、两侧虚线 `[3,3]` 中间实线、start+end 双端符号；横向条形图两者方向对应旋转。这些是运行时默认值，模型按参考图形态判别类型并填写业务 target，不复刻默认 `connectDirection`/`expandDistance`；显式改方向只是样式覆盖，不改变类型。完整判别规则见 [按参考图判别差异类型](semantic-marker-anchors.md#按参考图判别差异类型)。
 
 不要求模型复刻默认偏移或避让算法；运行时负责默认布局；Skill 检查显式样式配置，不承诺标签无重叠，也不为此强制渲染。
 

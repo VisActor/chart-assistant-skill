@@ -92,6 +92,28 @@ type DataTarget = {
 - 运行时负责阶梯类型、方向、默认偏移及原始值。年度 CAGR 依数据声明和年份差计算，不要求中间年份齐全；无声明旧类别口径不能冒充年数。零分母等不可计算情况需说明，不擅自换成其他口径。
 - 例如年度数据从 2020 的 100 增至 2024 的 146.41，CAGR 为 10%，不是 46.41%；只有两个可见端点也不改变四年周期。运行时统一解析边界值、单位尺度和周期，动态标签使用该结果；模型不增加周期缓存或内部计算字段。
 
+### 按参考图判别差异类型
+
+按参考图还原差异标注，或用户只说“标出差异”而未指明比较对象时，先判别类型再写 from/to。先看差异段位置：端点侧面的竖直差异段通常用 `hierarchy-diff-line`，顶部横向括号通常用 `total-diff-line`。斜向直线只有在比较两个总量端点、年度口径已声明且标签为年化含义时才用 `growth-line`；层边界、同类别系列或阶段贡献段即使以斜线连接，仍按其比较对象和口径选择 hierarchy。形态、连接对象和标签口径必须相互一致，不能只凭其中一个字段定型。
+
+同时支持 total 与 hierarchy 的图类：纵向柱（`bar`、`barGroup`、堆叠柱、`barPercent`）、横向条（`horizontalBar` 系列）、`line`、`area`/`areaPercent`、`dualAxis`、`waterfall`/`waterfallDecrease`、`mekko`/`mekkoPercent`；`growth-line` 除 Mekko 禁用外范围相同。scatter、histogram 与饼类不支持这些差异标注。
+
+形态即类型身份，与运行时默认 connectDirection 一致；按下表默认形态直接定类型，不用比较对象反推：
+
+| 图方向 / 图类 | `total-diff-line` 默认形态 | `hierarchy-diff-line` 默认形态 |
+| --- | --- | --- |
+| 纵向柱、`line`、`area`/`areaPercent`、`dualAxis`、`waterfall`/`waterfallDecrease`、`mekko`/`mekkoPercent` | 默认 connectDirection=top：从柱顶/数据点向上伸出顶部横括号；整线实线（cornerRadius 6），仅 endSymbol 单箭头 | 默认 connectDirection=right：从层边界向右伸出；multiSegment 三段折线，两侧虚线 [3,3]、中间实线，start+end 双端符号 |
+| 横向条形（`horizontalBar` 系列） | 与纵向相反：默认 connectDirection=right，从条末端向右伸出 | 默认 connectDirection=top，在条上方横向连接 |
+| 折线/面积 | 连接两条线各自在两个 x 位置的高度 | 连接同一层在两个 x 位置的边界/厚度变化 |
+| 瀑布 | 连接累计总量端点（如首柱与总计柱） | “层”是各阶段的正/负贡献段：比较两个阶段的贡献量/段高，不用累计高度冒充段高 |
+
+- 上表方向与形态是运行时默认值；模型不因参考图形态显式复刻 `connectDirection`/`expandDistance`，显式 `connectDirection` 只是样式覆盖，不改变类型身份。
+- **分组柱两种类型都可能**：`barGroup` 同类别两个系列的比较，顶部横括号形态用 `total-diff-line`，侧面竖直差异段形态用 `hierarchy-diff-line`；同一比较语义可以用任一类型表达。只有没有参考图、用户也未指定形态时，才按语义默认：堆叠层/同类别系列等层级比较默认 hierarchy，整柱/总量比较默认 total。from/to 始终写完整业务键（分组值与 metric），不能用省略组值把分组柱强行合计。
+- **growth-line 与 total 同属总量端点类**，按线型与口径区分：growth 默认是连接两个偏移后端点的直实线（非 type-step 阶梯、无 cornerRadius、无 connectDirection/expandDistance），仅 endSymbol 实心单箭头，跨多个时间类别时呈斜向直线，标签默认 `CAGR`（多年复合年化，端点须满足 §3.1 年度字段声明）；total 是阶梯横括号线，标签默认 `percentage`（两端相对变化）。参考图中 2018→2022、2023→2026 各一条斜向上箭头配 % 标签是两条 growth-line；两根柱子之间的 +120%（(587-267)/267）只是两端增长率，形态为侧面竖段时是 `hierarchy-diff-line` + `layerGrowthRate`，为顶部括号时是 `total-diff-line` + `percentage`，都不是 CAGR——同数据 2010→2017 的 CAGR 约 +11.9%/年。
+- 标签内容可辅助复核：`layerValueDiff`/`layerGrowthRate`/`layerShareDiff`/`layerShareGrowthRate` 仅用于 hierarchy；total/growth 使用 `value`/`abs`/`percentage`/`percentPointDiff`/`CAGR`。旧 hierarchy 卡片可保留 `value/percentage/pp/percentdiff` 旧公式，因此内容类型只能单向佐证（出现 layer* 必为 hierarchy），不能反推 total。
+- **标注类型与标签口径是两次独立判断**：仅更换 marker 类型不会修正标签分母。按参考图识别百分比数值标签时先核算分母：差值 ÷ 另一端点原值 = 增长率（`layerGrowthRate`）；同类别同堆叠组内两端占比之差（等值于差值 ÷ 该类别总量）= 占比差（`layerShareDiff`，带 pp 后缀）；差值本身 = `layerValueDiff`。例如 Production 185 与 Development 103 的差值 82 若以同年总量 303 为分母约为 27%，但参考图未明确分母时这只是候选口径，必须确认后再生成。占比内容只在百分比模板（`barPercent`/`areaPercent`/`mekkoPercent`）上可用，普通 `bar`/`barGroup` 上会报“占比内容要求两端属于可比较的实际百分比堆叠及同一值轴”。非百分比图上想表达“差额/类别总量”时，参考图也构成图型与表达约束；只有用户明确接受百分比图时才切换模板。否则说明当前动态计算缺口，不能用增长率冒充，也不能为满足标注而丢失分组、配色或图例，见 [局部修正时保留完整表达](workflow.md#局部修正时保留完整表达)。
+- 反例：单系列两根柱之间（如 2010:267→2017:587 的 +120%）差异竖段画在端点侧面时仍是 `hierarchy-diff-line`（标签 `layerGrowthRate`），不因“两柱总量比较”写成 total；分组柱同类别两系列上方的顶部横括号是 `total-diff-line`，不因“同类别两系列”写成 hierarchy。形态无法从参考图确认时，说明缺项并核对，不按对象猜类型。
+
 ### 3.0 本层内容、模板与边界的生成检查
 
 生成 `hierarchy-diff-line` 时依次完成三项检查：
@@ -100,7 +122,7 @@ type DataTarget = {
 
    | 比较意图 | `content` | 可直接选用的模板 |
    | --- | --- | --- |
-   | 本层原值差 / 原值增长率 | `layerValueDiff` / `layerGrowthRate` | `bar`、`area`、`mekko`，也可用于对应百分比模板的原值比较 |
+   | 本层原值差 / 原值增长率 | `layerValueDiff` / `layerGrowthRate` | `bar`、`barGroup`、`horizontalBar` 系列、`line`、`area`、`dualAxis`、`waterfall`/`waterfallDecrease`、`mekko`，也可用于对应百分比模板的原值比较 |
    | 本层归一占比差 / 占比增长率 | `layerShareDiff` / `layerShareGrowthRate` | `barPercent`、`areaPercent`、`mekkoPercent` |
 
    用户未固定模板且明确要占比时，选对应百分比模板并保留原始数值，归一由运行时完成。用户明确要求保留普通堆叠并比较占比时，说明当前组合不支持，询问是否接受百分比图；不能自行改成原值差或换图。双轴、导入 spec、URL 图和模型覆盖不按这张表猜实际 percent，须核对运行时实际系列、轴及归一组。
