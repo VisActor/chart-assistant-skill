@@ -13,6 +13,28 @@ const text = value => typeof value === 'string' && value.trim().length > 0;
 const array = value => value == null ? [] : Array.isArray(value) ? value : [value];
 const ordinaryStackTemplates = new Set(['bar', 'area', 'mekko']);
 
+// 仅检查可确定的字段层级；true/false 的选择取决于用户意图，不属于结构校验。
+function validateAxisGroupLabelPlacement(options, at) {
+  const failures = [];
+  const inspectAxis = (axis, path) => {
+    if (object(axis?.label) && Object.prototype.hasOwnProperty.call(axis.label, 'showAllGroupLayers')) {
+      failures.push(`${path}.label.showAllGroupLayers: belongs on the axis; use ${path}.showAllGroupLayers instead.`);
+    }
+  };
+  array(options.spec?.axes).forEach((axis, index) => {
+    inspectAxis(axis, `${at}.options.spec.axes${Array.isArray(options.spec.axes) ? `[${index}]` : ''}`);
+  });
+  const config = object(options.config) ? options.config : {};
+  const modelSpec = config.modelSpec !== undefined ? config.modelSpec : options.modelSpec;
+  const modelPath = `${at}.options${config.modelSpec !== undefined ? '.config' : ''}.modelSpec`;
+  array(modelSpec).forEach((model, index) => {
+    if (model?.specKey === 'axes') {
+      inspectAxis(model.spec, `${modelPath}${Array.isArray(modelSpec) ? `[${index}]` : ''}.spec`);
+    }
+  });
+  return failures;
+}
+
 // 只拒绝模板源码可以确定的组合；导入/未知来源及模型覆盖仍需实际运行时判断。
 function validateLayerShareContent(options, at) {
   if (!ordinaryStackTemplates.has(options.chartType) || options.data?.type !== 'standard' ||
@@ -139,7 +161,10 @@ export function validateCommonOption(commonOption, location = 'commonOption') {
         if (!editableConfigKeys.has(key)) failures.push(`${at}.options.config: unsupported key ${key}`);
       });
     }
-    if (element.type === 'chart') failures.push(...validateLayerShareContent(options, at));
+    if (element.type === 'chart') {
+      failures.push(...validateLayerShareContent(options, at));
+      failures.push(...validateAxisGroupLabelPlacement(options, at));
+    }
   });
   return failures;
 }

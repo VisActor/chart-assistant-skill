@@ -169,6 +169,45 @@ interface GraphicAttribute {
 - 只有 `colorConfigurable:true` 的 SVG 才保证 `svgFill/svgStroke` 改色有效。
 - callout/diamond 等几何内部点由运行时维护；没有可靠 fixture 时不要自行生成 `shapePoints`。
 
+### 4.1 画布图形选择准则
+
+画布元素按视觉语义选择，不能因为都含文字或都靠近数据就统一写成 `callout` 或 `marker`。
+
+| 对象 | 元素类型 | 用途 |
+| --- | --- | --- |
+| 无容器的文字 | `text` | 标题、注释、固定说明 |
+| 矩形/圆角框 | `rect` | 标签底、框选、区域强调 |
+| 椭圆/圆形 | `oval` | 徽章、圆形强调 |
+| 菱形 | `diamond` | 菱形决策节点或几何强调 |
+| 带尾巴气泡 | `callout` | 指向性说明与对话框 |
+| 直线/折线/曲线 | `straightLine` / `elbowLine` / `curveLine` | 固定版式的连线、箭头和引线 |
+| 图片/图标 | `image` / `svg` | 品牌、图例外素材或其他非数据视觉资源 |
+| 跟随数据对象的说明 | `marker.markPoint` | 图表内的 datum 锚定标注，不属于画布元素 |
+
+选择时先问“对象是否必须随 datum 重排或刷新而移动”：是则使用 `marker.markPoint` + `target`；否则按外观和版式选择画布 element，并显式写 `position` 与 `zIndex`。连接两个画布对象时，用第 5 节的 line element；不要把固定画布连线伪造为 datum marker。
+
+### 4.2 `callout` 与图表点标注的边界
+
+`callout` 是独立画布图形，适合参考图中带气泡轮廓和尾巴的文字框。它和图表不共享数据 target，位置由自身 `position`、文字、`graphic` 样式与 `zIndex` 决定；生成 commonOption 时写 `type:"callout"`、明确 `position`，并在 `options` 内重复 `type:"callout"`。默认尾巴在左下，不能据此认为它已指向数据。
+
+尾巴调整使用 `graphic.shapePoints[0]`：`x/y` 是相对于 callout 自身宽高的归一化尖端坐标，允许落在 `0..1` 之外。先根据渲染后的图元位置确定目标方向，再将尖端放在对应一侧，例如目标在右下方时通常为 `x > 1, y > 1`。无边框气泡必须显式写 `lineWidth: 0`：路径默认描边宽度为 4，即使 stroke 与 fill 同色也会钝化很窄的尾端。该配置是固定画布锚点，不会随 datum 自动移动；需要随数据刷新保持锚定时，改用 `marker.markPoint` + `target`，或在数据更新后重新布局并更新 callout。
+
+```json
+{
+  "id": "capacity-callout-2028",
+  "type": "callout",
+  "position": { "x": 360, "y": 170, "width": 150, "height": 92 },
+  "options": {
+    "type": "callout",
+    "graphic": { "fill": "#21B4E8", "lineWidth": 0, "shapePoints": [{ "x": 1.12, "y": 1.34 }] },
+    "text": { "text": "+196K", "fill": "#FFFFFF", "fontSize": 20, "textAlign": "center", "textBaseline": "middle" },
+    "zIndex": 10
+  }
+}
+```
+
+`marker.markPoint` 是图表内、以业务 `target` 跟随数据对象的说明，适合“给 Q4 柱/China 点加注释”；它不会生成画布气泡轮廓，也不能替代图片中的 callout。没有数据锚点、须随画布排版的气泡框不得降级为 `mark-point`。反过来，要求随数据刷新仍指向某个 datum 的说明不得用固定坐标 callout 冒充。
+
 ## 5. StraightLine、ElbowLine、CurveLine
 
 ```ts

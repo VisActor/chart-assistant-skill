@@ -22,6 +22,10 @@
 
 [China 点说明与折线引线](../examples/semantic-point-callout-layout.json)：760×440 的 standard scatter 完整 commonOption，`target.match` 定位 China，`itemContent.offsetX=-58/offsetY=28` 是文字移到左下方的候选，`itemLine.type=type-do` 连接目标。此偏移不承诺在其他尺寸、字体或数据下无重叠；按 [点标注配置](point-marker-layout.md) 生成偏移与引线，用户反馈冲突时再针对性调整。已有显式偏移或手动位置应保留。
 
+## 参考图片中的画布气泡框
+
+[分组堆叠产能图与画布 callout](../examples/image-grouped-stacked-callout.json)：用 `options.spec` 的 VChart `common` 表达一根客户预测柱和一根由当前/新增产能构成的堆叠柱；示例包含一个独立画布 `callout`，不是 `mark-point`。仅作为图片还原的协议示例，必须在目标运行时渲染并按 [参考图片还原](image-reproduction.md) 调整位置、尺寸和字体。
+
 ## 语义标注完整 record
 
 [气泡四象限名称](../examples/bubble-quadrant-corner-labels.json)：四行最小示意数据，x=0.5、y=-8；quadrant 管分区，四个无引线 markPoint 管角落文字。布局规则及反转、删除等限制见 [四角布局](semantic-marker-anchors.md#71-四象限名称的四角布局)。替换业务数据时重新确定阈值与名称。

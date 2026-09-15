@@ -105,6 +105,12 @@ type AxisModelSpec = ModelIdentity & { specKey:"axes"; spec:{
 
 `type` 是当前类型定义中的必填项。修改已有轴时应深合并而非重建。`base` 仅用于 log；`min/max/breaks` 仅用于数值轴；新建柱/条图默认 `zero:true`。
 
+### x 轴多层分组标签
+
+新建图表或整体优化时，x 轴存在多层分组，默认只展示最外层分组标签。在实际 x 轴对应的 `modelSpec[].spec` 中显式设置 `showAllGroupLayers:false`；不能只省略该字段，因为多维模板可能默认设为 `true`。内置纵向直角坐标模板通常对应 `axis-bottom/specIndex:1`，已有图或导入图按实际轴身份修改。
+
+只调整标签显示，保留数据、全部分组字段和 `mappingSpec`，不通过删维度、合并类别或改变图型来隐藏内层标签，也不以 `label.visible:false` 关闭整条轴的标签。用户明确要求展示全部层级时才设 `showAllGroupLayers:true`；局部编辑保留用户原有的层级显示设置。
+
 `title.position/angle/autoRotate` 都是布局覆盖，不是展示轴标题的必填字段。首次创建内置模板时，如果用户只要求显示左轴标题，必须只写 `title.visible/text/style`，省略这些布局字段，让模板和 VChart 决定默认位置。用户明确要求轴标题位于开始、中间或末端时，才生成对应的 `position`。
 
 ```json

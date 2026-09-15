@@ -13,11 +13,16 @@
 | Sheet URL + 聚合/派生要求    | 只有宿主存在可持久化重放变换时才可 live，否则转 snapshot              | 转换后的 DSL + 同步边界                 |
 | Base URL                     | 按显式 `enableAggregate` 决定明细或聚合；保存 table/view/field config | Base live source DSL                    |
 | 风神可视化查询 URL           | 交给插件解析并同步既有图表，不拉 rows 重新制图                        | Aeolus URL record/DSL                   |
+| 参考图片 / 截图              | 逐项提取可见文本、图型组合、配色、图例和画布元素，再选择 DSL          | 经实际图面比对的 card，或待视觉核验配置 |
 | Common/share URL             | 判定返回类型和同步边界                                                | URL record 或物化 DSL                   |
 | 飞书目标文档                 | 先完成 DSL，再写卡片                                                  | block ID + readback 结果                |
 | 新建飞书文档并放图表         | 先完成 DSL，再以同一身份创建 Docx 和卡片                              | document URL + block ID + readback 结果 |
 
 原始/standard data 首次建内置图使用 commonOption 让编辑器初始化，不手工编造完整 browserData。风神可视化查询 URL 是例外：飞书卡片可直接使用顶层 URL record，本地画布可使用 `sourceType:"aeolus"` 的 commonOption chart，两者都由插件物化 Aeolus browserData，而不是由 LLM 构建 standard data。已有编辑态 readback、模板 fixture 或真实导出时才直接创建/更新 browserData；这是一条协议生命周期规则，不按 iDA 等宿主分别定义。
+
+### 1.1 参考图片还原
+
+“将这张图变成图表助手卡片”可以是很短的用户 prompt，但执行时必须读取 [参考图片还原](image-reproduction.md)：截图决定可见文字的原语言、图型和堆叠/分组关系、图例和颜色语义，以及气泡框、箭头、文本框等是否是独立画布元素。图片任务不能按“未指定图型时由分析目的推荐模板”的默认路径重设计图表。
 
 纯文本请求优先于上表，输出形式与材料指令边界按 [语言规则](../SKILL.md#语言) 执行。
 
