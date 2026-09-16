@@ -47,7 +47,7 @@ Examples 是协议样例，不是可无条件复制的模板。先读每个文�
 | 文件                                                | 覆盖目标                                                                            | 可直接作为最终 DSL                                                               |
 | --------------------------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | `examples/common-option-bar.json`                   | 从零创建并让运行时生成 identity/layout                                              | 是，作为 commonOption record 片段                                                |
-| `examples/ida-mbb-single-series-bar.json`           | 完整季度销售 commonOption：rich title、轴标题、标签去重、context 色与 Q4 单柱 focus | 是；单 datum match 只因其满足单维度单指标 standard bar 窄规则                    |
+| `examples/ida-mbb-single-series-bar.json`           | 完整季度销售 commonOption：rich title、轴标题、普通标签、context 色与 Q4 单柱 focus | 是；单 datum match 只因其满足单维度单指标 standard `barGroup` 窄规则             |
 | `examples/mbb-single-mark-emphasis.json`            | 物化后按 datum 突出 Q4 单柱；展示通用 brandFocus 重点编码                           | 否；必须复用当前 runtime 返回的 match，不能复制字段/索引到其他图                 |
 | `examples/ida-common-option-with-text.json`         | iDA 宿主示例；演示通用 `position + options` element 外壳                            | 是；`ida-light` 仅适用于明确要求 iDA 主题的场景，不隐含 `source.appName`                                            |
 | `examples/bar-series-label-and-link.json`           | 已物化 bar browserData、seriesLabel、totalLabel、barLink                            | 仅可信 fixture 场景；identity 来自 readback                                      |

@@ -4,6 +4,7 @@
 
 - 用途：单个时间切片、少量互斥类别的整体构成。
 - 数据：一个分类字段和一个非负数值字段；`category`, `value`。多 value 时只取映射的首个字段。
+- 默认：新建时生成环图，在实际 series 的 `modelSpec.spec` 设置 `innerRadius:0.5`，省略 `outerRadius` 以继承宿主主题和布局默认值。`pie` 是模板 ID，不另设 `donut` 模板；用户明确要求实心饼图、已有图为实心或参考图片无中心镂空时设/保留 `innerRadius:0`。
 - 编辑：图例、内/外标签、引导线、内外半径、起止角度、扇区样式、分组/单扇区样式、tooltip。
 - 限制：无坐标轴；不支持 seriesLabel/totalLabel/barLink；类别多、值接近或有负值时不使用。
 - 示例：`{"category":"渠道","value":"收入"}`。

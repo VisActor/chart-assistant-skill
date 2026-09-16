@@ -246,7 +246,7 @@ interface IMarkStyle {
 
 `id` 可用 UUID；真正命中由 `seriesType + seriesIndex + markName + itemKeys/itemKeyMap` 决定。`itemKeys` 应来自 runtime series key fields，不能只写可能重复的显示类别。数值型 `itemKeyMap` 在转换中可能被解释成 scale index，因此必须由运行时 picker/compiler 产生；不要把任意数值业务 ID 手写为索引。
 
-一个可离线确定的窄例外是当前内置 standard parser 的“单维度 + 单指标 + 单 series bar”：
+一个可离线确定的窄例外是当前内置 standard parser 的“单维度 + 单指标 + 单 series `barGroup`”：
 
 ```json
 {

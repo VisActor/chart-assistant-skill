@@ -7,7 +7,7 @@
         "type": "chart",
         "position": { "x": 0, "y": 0, "width": 960, "height": 540 },
         "options": {
-          "chartType": "bar",
+          "chartType": "barGroup",
           "data": {
             "type": "standard",
             "value": {
@@ -116,9 +116,7 @@
                 "spec": {
                   "label": {
                     "visible": true
-                  },
-                  "totalLabel": { "visible": false },
-                  "seriesLabel": { "visible": false }
+                  }
                 }
               }
             ]

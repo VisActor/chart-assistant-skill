@@ -14,10 +14,10 @@
 | 模板 | 主要任务 | 必需映射 | 可选映射 |
 | --- | --- | --- | --- |
 | `bar` | 堆叠/多系列纵向比较 | `x`, `y` | 第二维度 |
-| `barGroup` | 并列纵向比较 | `x`, `y` | 第二维度 |
+| `barGroup` | 独立或并列纵向比较 | `x`, `y` | 第二维度 |
 | `barPercent` | 100% 纵向构成 | `x`, `y` | 第二维度 |
-| `horizontalBar` | 横向排序比较 | `x`, `y` | 第二维度 |
-| `horizontalBarGroup` | 并列横向比较 | `x`, `y` | 第二维度 |
+| `horizontalBar` | 横向堆叠/多系列比较 | `x`, `y` | 第二维度 |
+| `horizontalBarGroup` | 独立或并列横向比较 | `x`, `y` | 第二维度 |
 | `horizontalBarPercent` | 100% 横向构成 | `x`, `y` | 第二维度 |
 | `line` | 时间/有序趋势 | `x`, `y` | 第二维度 |
 | `area` | 趋势与累计量级 | `x`, `y` | 第二维度 |
@@ -26,7 +26,7 @@
 | `dualAxis` | 不同量纲组合 | `x`, `leftY`, `rightY` | 多指标 |
 | `waterfall` | 起点、增减贡献、终点 | `x`, `y` | 多指标/总计语义 |
 | `waterfallDecrease` | 递减贡献/桥图 | `x`, `y` | 多指标 |
-| `pie` | 少量类别构成 | `category`, `value` | 无 |
+| `pie` | 少量类别构成（默认环图） | `category`, `value` | 无 |
 | `rose` | 极坐标类别比较 | `category`, `value` | 多指标 |
 | `radar` | 多维画像 | `category`, `value` | 多系列 |
 | `funnel` | 阶段规模/转化 | `category`, `value` | 无 |
@@ -81,10 +81,10 @@
 
 ## 选择约束
 
-- 类别比较：少量类别用 `bar`；标签长或类别多用 `horizontalBar`；并列比较才用 group；部分占整体才用 percent。
+- 类别比较：只有一个可见数据组时，少量类别用 `barGroup`；标签长或类别多用 `horizontalBarGroup`。简单宽表可用单个 `y` 字段预判，长表/第二维度必须先核对物化后的 series 基数。多个可见数据组时，独立并列比较用 group、可相加的构成或总量用 `bar`/`horizontalBar`；部分占整体才用 percent。`barLink`、`seriesLabel`、`totalLabel` 是普通模板的显式能力例外，不可用时应说明后改选普通模板。
 - 时间趋势：`line` 优先；强调累计规模用 `area`；份额变化用 `areaPercent`。
 - 关系：两个数值指标才用 `scatter`；第三数值映射 `size`，类别映射 `group`。
-- 构成：饼图只用于少量类别和单一时间切片；类别多时改排序条形图。
+- 构成：饼图只用于少量类别和单一时间切片，默认以 `pie` 的 `innerRadius:0.5` 生成环图，并省略 `outerRadius` 以继承宿主主题和布局默认值；用户明确要求实心或参考图明确实心时才用 `innerRadius:0`。类别多时改排序条形图。
 - 流程：连续阶段规模用 funnel；来源到去向用 sankey；增减桥接用 waterfall。
 - 层级：矩形空间效率用 treemap；层级路径用 sunburst；包容和规模用 circlePacking。
 - `gauge` 的本地模板当前 `getSpec()` 返回空对象且数据校验恒真，因此不能把它当成“给一个 value 就能可靠生成”的普通标准数据模板。优先使用已有 spec、VSeed/风神来源或经运行时验证的 fixture。

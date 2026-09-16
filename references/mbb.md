@@ -148,7 +148,7 @@ MBB 是 presentation policy，不是新图表协议。先确定数据/来源、�
 - 用户显式样式和局部编辑范围优先；不覆盖未授权的颜色。普通高亮不意味着业务好坏，不能把某个红/绿或品牌色固化为通用重点色。
 - 排序、筛选、同步或换源后，新的分析/生成应重新判定重点；静态markStyle绑定业务对象，不是自动执行“当前最大值”的检测器，不承诺同步后自动重选重点。
 
-落点：整组强调使用 `dataGroupSpec[groupKey]`；单个柱、点、扇区、节点或单元使用 `markStyle[]`。一般情况下 `markStyle` 的 `seriesIndex/itemKeys/itemKeyMap` 必须来自当前物化/runtime picker。当前内置 standard parser 的“单维度 + 单指标 + 单 series bar”可按 element-editing 中声明的窄规则直接使用 `_editor_dimension_field + _editor_type_field`；其他结构仍需 readback，不能从数据数组位置猜单图元身份。
+落点：整组强调使用 `dataGroupSpec[groupKey]`；单个柱、点、扇区、节点或单元使用 `markStyle[]`。一般情况下 `markStyle` 的 `seriesIndex/itemKeys/itemKeyMap` 必须来自当前物化/runtime picker。当前内置 standard parser 的“单维度 + 单指标 + 单 series `barGroup`”可按 element-editing 中声明的窄规则直接使用 `_editor_dimension_field + _editor_type_field`；其他结构仍需 readback，不能从数据数组位置猜单图元身份。
 
 ## 8. 内置配色候选与当前 preset
 

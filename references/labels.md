@@ -109,19 +109,17 @@ type PieOutsideLine = {style?:LineStyle;smooth?:boolean};
 
 先按最终 mapping 计算“有效数据组/堆叠层”，不要按原始 CSV 的列数判断：
 
-- 只有一个有效组或一个可见堆叠层：`label.visible:true`，`totalLabel.visible:false`。此时 total 与 value 相同，不能重复展示。只做去重或数值格式化时，普通 `label` 必须省略 `position/offset`；内置 bar 默认是 `inside`。只有用户明确要求柱外、顶部等位置时，才生成对应的位置覆盖；显式同色的可读性冲突按下节窄例外处理。
+- 只有一个有效组或一个可见堆叠层：`label.visible:true`。支持 totalLabel 的堆叠模板同时设 `totalLabel.visible:false`；`barGroup`/`horizontalBarGroup` 不支持 totalLabel，必须省略该字段。此时 total 与 value 相同，不能重复展示。只做去重或数值格式化时，普通 `label` 必须省略 `position/offset`；内置 bar 默认是 `inside`。只有用户明确要求柱外、顶部等位置时，才生成对应的位置覆盖；显式同色的可读性冲突按下节窄例外处理。
 - 两个及以上可相加的堆叠层：普通 label 表示分项，totalLabel 才可表示类别总量；若分项已足够支撑结论，仍可关闭 totalLabel。
 - 分组而非堆叠、不同单位、不可加指标：不得用 totalLabel 制造“总计”。
 - 单系列且图形身份已由轴/标题说明时，通常 `seriesLabel.visible:false`；多系列需要直接标识时才开启。
 - pie/rose/funnel/Mekko/area/waterfall 等只要 summary/total 与普通标签内容相同，也遵循相同去重原则。
 
-对于最小单指标 bar，验证过的 series identity 可写为：
+对于最小单指标 `barGroup`，验证过的 series identity 可写为：
 
 ```json
 {"id":"series-0","specKey":"series","specIndex":0,"spec":{
-  "label":{"visible":true},
-  "totalLabel":{"visible":false},
-  "seriesLabel":{"visible":false}
+  "label":{"visible":true}
 }}
 ```
 

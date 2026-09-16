@@ -205,7 +205,7 @@ interface IModelSpec {
 
 结构化编辑常用 `specKey`：`axes`、`title`、`legends`、`region`、`series`、`tooltip`、`crosshair`。运行时也会识别并保存 `player`、`dataZoom`、`scrollBar` 组件，但当前 Skill 只承诺保留已有 raw spec，不把它们当成可离线合成的结构化编辑组件。`id` 是运行时组件 `userId`；`specIndex` 是同一 `specKey` 规范化数组中的零基运行时索引，不是数据列或系列字段序号。
 
-有 `id` 时默认严格按 ID 匹配，只有显式兼容模式才回退到 `specKey + specIndex`。编辑已有数据必须复用真实 identity；从零创建使用 commonOption。公共组件使用当前内置模板已验证的 ID；series 通常物化后读取，只有“单维度 + 单指标”的最小 standard bar 可按已验证规则使用 `series-0`。完整字段和失败策略见 [model-spec.md](model-spec.md)；组件内部的 label/grid/legend item/mark ID 见 [element-editing.md](element-editing.md)。
+有 `id` 时默认严格按 ID 匹配，只有显式兼容模式才回退到 `specKey + specIndex`。编辑已有数据必须复用真实 identity；从零创建使用 commonOption。公共组件使用当前内置模板已验证的 ID；series 通常物化后读取，只有“单维度 + 单指标”的最小 standard `barGroup` 可按已验证规则使用 `series-0`。完整字段和失败策略见 [model-spec.md](model-spec.md)；组件内部的 label/grid/legend item/mark ID 见 [element-editing.md](element-editing.md)。
 
 例：对一个已确认真实 identity 的 series 开启 series label：
 
