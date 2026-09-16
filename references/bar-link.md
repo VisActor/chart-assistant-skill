@@ -52,6 +52,8 @@ type BarLinkSymbol = {
 
 不把 `barGroup`、`horizontalBarGroup`、瀑布、Mekko 或 dual axis 自动视为支持。接口注释中的历史列表可能比实际能力常量宽；生成时以运行时 `barLinkChartList` 和实际 customMark 是否生成作为验收依据。
 
+`barLink` 默认关闭。对内置 `bar`、`barPercent`、`horizontalBar`、`horizontalBarPercent`，仅当用户明确要求，或类别是时间/阶段/已声明顺序、堆叠层在相邻类别间含义一致、且任务明确比较相邻累计总量或构成边界变化时，首次创建才写 `options.config.barLink:{enable:true}`。无序类别、排名/独立快照、层集合不一致、单层、group、密集或难解释的正负/零基数保持关闭。只需开关时不要补写 `spec`，继承运行时默认外观；`spec` 仅在用户要求连接类型、填充或标签时填写。
+
 ## 3. 单元素 key 策略
 
 运行时先为每一对相邻类别生成一条 `BarLinkLineDatum`。其 `id` 若存在则使用该值，否则使用当前 `data` 数组的零基绘制索引。三个可编辑子元素共用同一个 datum identity，并加不同前缀：

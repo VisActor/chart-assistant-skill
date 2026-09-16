@@ -94,9 +94,9 @@ LLM 应：
 3. 选择 `bar` 而非 `barGroup`，因为 `barLink` 不支持 group 模板。
 4. 将长表 pivot 为宽表或让运行时产生等价 cell-series；不能仅写含糊 `series` key。
 5. `mappingSpec = {x:"月份", y:["产品A销售额","产品B销售额"]}`。
-6. 首次 commonOption 在 `options.config.barLink.enable` 开启连接线；不要猜 series model ID。
+6. 用户明确要求系列连接线，且最终模板受支持，因此首次 commonOption 在 `options.config` 写 `barLink:{enable:true}`；它不依赖 series identity。未明确要求时，只有类别顺序可靠、层语义稳定且任务分析相邻累计/构成边界变化才写。
 7. 物化并 readback 后，复用真实 series `id/specIndex`，在对应 model 开 `seriesLabel.visible`；只有“单维度 + 单指标”的最小 standard bar 可按已验证规则直接使用 `series-0`。
-8. 若 x 使用两级维度，说明 seriesLabel 会被模板关闭并调整数据或拒绝。
+8. 对上述多分类堆叠，即使 x 使用两级维度导致模板默认关闭，也在每个真实 series 的 modelSpec 显式恢复 `seriesLabel.visible:true`；不能按数组序号猜 ID。单层堆叠或用户明确关闭时不恢复。
 
 完整两阶段结构见 [bar-series-label-and-link-two-phase.json](../examples/bar-series-label-and-link-two-phase.json)。若宿主只允许一次写入且没有物化回调，只能保证 barLink；必须明确系列标签尚待二阶段 patch，不能伪造 `series-0`。
 

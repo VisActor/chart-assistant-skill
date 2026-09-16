@@ -50,12 +50,12 @@
 
 | 模板 | 轴 | 图例 | 常规标签 | 系列标签 | 总计标签 | barLink | 宽度 | 完整差异 marker | 特殊能力 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `bar` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 两级维度时 seriesLabel 关闭 |
+| `bar` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 多级分类默认可能关闭；多堆叠分类时手动开启 |
 | `barGroup` | ✓ | ✓ | ✓ | — | — | — | ✓ | ✓ | 并列 |
-| `barPercent` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 百分比 formatter |
-| `horizontalBar` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 横向 |
+| `barPercent` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 百分比 formatter；多堆叠分类时手动开启 |
+| `horizontalBar` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 横向；多堆叠分类时手动开启 |
 | `horizontalBarGroup` | ✓ | ✓ | ✓ | — | — | — | ✓ | ✓ | 并列横向 |
-| `horizontalBarPercent` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 百分比 formatter |
+| `horizontalBarPercent` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 百分比 formatter；多堆叠分类时手动开启 |
 | `line` | ✓ | ✓ | ✓ | ✓ | — | — | — | ✓ | 点/线样式 |
 | `area` | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | ✓ | 面积/点/线 |
 | `areaPercent` | ✓ | ✓ | ✓ | ✓ | ✓ | — | — | ✓ | 百分比 |
@@ -82,6 +82,7 @@
 ## 选择约束
 
 - 类别比较：只有一个可见数据组时，少量类别用 `barGroup`；标签长或类别多用 `horizontalBarGroup`。简单宽表可用单个 `y` 字段预判，长表/第二维度必须先核对物化后的 series 基数。多个可见数据组时，独立并列比较用 group、可相加的构成或总量用 `bar`/`horizontalBar`；部分占整体才用 percent。`barLink`、`seriesLabel`、`totalLabel` 是普通模板的显式能力例外，不可用时应说明后改选普通模板。
+- 对 `bar`、`barPercent`、`horizontalBar`、`horizontalBarPercent`：`barLink` 默认关闭；只有用户明确要求，或类别顺序可靠、层含义稳定且任务明确分析相邻累计/构成边界变化时，首次创建才在 `options.config` 显式设置 `barLink:{enable:true}`。随后在每个实际 series 的 `modelSpec.spec` 显式设置 `seriesLabel.visible:true`。`barLink` 不依赖 identity，seriesLabel 必须先物化/readback 获取真实 `id/specIndex`；不能按 `mappingSpec.y` 的字段个数或数组序号猜 series。无序类别、排名快照、层集合不一致、单层、并列 group、密集或难解释的正负/零基数不自动开启。
 - 时间趋势：`line` 优先；强调累计规模用 `area`；份额变化用 `areaPercent`。
 - 关系：两个数值指标才用 `scatter`；第三数值映射 `size`，类别映射 `group`。
 - 构成：饼图只用于少量类别和单一时间切片，默认以 `pie` 的 `innerRadius:0.5` 生成环图，并省略 `outerRadius` 以继承宿主主题和布局默认值；用户明确要求实心或参考图明确实心时才用 `innerRadius:0`。类别多时改排序条形图。

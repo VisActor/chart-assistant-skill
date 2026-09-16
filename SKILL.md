@@ -13,9 +13,18 @@ description: 使用图表助手 DSL 创建、编辑、解释、校验和交付�
 
 只按当前任务读取相关 Reference，复用本会话已确认的协议和能力；环境未变化时不重复探测失败的预览能力。缺少预览不阻塞正确配置的生成或经 readback 验证的写入，不承诺自动避让或视觉验收通过。
 
+## 外部能力运行前检查
+
+本 Skill 是图表助手 DSL 与交付协议，**不自带**飞书写入工具、数据源插件、CLI、MCP 或凭证。加载成功只说明可以生成、解释和校验配置；不得因此声称已经创建文档、插入卡片或完成同步。
+
+1. 涉及外部数据、文档或同步时，先确认当前宿主是否实际提供所需能力：读取数据源、创建或读取 Docx、创建/更新 `block_type:40` 卡片，以及写后 readback。缺任一能力时，继续完成可做的 DSL/record 校验，并明确标记未执行的外部操作。
+2. 需要创建或替换飞书卡片时，确认目标账号已可使用 ISV「图表助手」、对目标文档有相应权限，且目标 Sheet/Base/风神数据源可访问。应用安装、文档权限、数据源权限和宿主写入能力是彼此独立的门槛。
+3. 宿主若通过 CLI 或 MCP 提供上述能力，必须由宿主或连接器显式安装、配置和授权；不得假设运行环境预装 CLI，也不得要求用户在对话中提供 token、cookie、app secret 或签名。MCP 未接入时按无写入工具处理，不尝试伪造调用。
+4. 不需要外部工具的请求（生成、解释、编辑或校验 DSL/record）可直接完成。涉及参考图片复刻时仍须有实际渲染能力才可声称视觉复刻完成。
+
 ## 默认工作方式
 
-1. 先识别输入属于参考图片、原始数据、`ILayerData[]`、`commonOption`、URL 还是已有卡片。参考图片先执行第 8 项，再应用其余默认规则。已有飞书卡片先读 [existing-card-replacement.md](references/existing-card-replacement.md)：有授权运行会话时可原位保存；仅有服务端 OpenAPI 时，经用户接受身份变化后采用先建新、验证、再删旧。已接受替换的会话不逐次重复询问。
+1. 先识别输入属于参考图片、原始数据、`ILayerData[]`、`commonOption`、URL 还是已有卡片；涉及外部数据、文档写入或同步时，再执行“外部能力运行前检查”。参考图片先执行第 8 项，再应用其余默认规则。已有飞书卡片先读 [existing-card-replacement.md](references/existing-card-replacement.md)：有授权运行会话时可原位保存；仅有服务端 OpenAPI 时，经用户接受身份变化后采用先建新、验证、再删旧。已接受替换的会话不逐次重复询问。
 2. 用户指定图表类型时只校验，不擅自改型；未指定时再按分析目的选内置模板。
 3. 新建图表或用户要求分析/优化整图时，按 [自动洞察与标注](references/auto-insights.md) 扫描可比较事实、检查表达增量并选择最少必要标注；允许 0 个 marker，用户显式要求标注时按要求执行。局部编辑保持原范围。先验证数据形状和模板能力，再生成 `mappingSpec`、`modelSpec`、marker 或专属字段；本层差异按 [内容、模板与边界检查](references/semantic-marker-anchors.md#30-本层内容模板与边界的生成检查) 配对比较口径和模板，再选择连接边界。
 4. URL 必须判定角色、live/snapshot、手动同步和自动同步资格。
@@ -33,7 +42,7 @@ description: 使用图表助手 DSL 创建、编辑、解释、校验和交付�
 - 指定单个标签、单个图形或组件子项时，读 [语义元素定位](references/element-editing.md#0-语义-target只补现有-dsl-的定位)：保留原样式 DSL，用 `modelSpec/markStyle` 条目 target 或 `styleMap/dataGroupSpec` 的 `[{target,value}]` 表达业务对象，由实例转换成原生身份。旧 ID 写法仍兼容；不猜内部 key，不扩大编辑范围。
 - `modelSpec` 是组件编辑的主存储；`dataGroupSpec` 保存分组样式，`markStyle` 保存单图元样式。不要新写 deprecated 的 root-level 兼容字段。
 - **普通标题也必须写入 `options.config.modelSpec[]`**，使用 `id:"chart_title", specKey:"title", specIndex:0`。新建标题按 [富文本标题](references/model-spec.md#mbb-富文本标题) 生成，保留用户原文，只补有必要且有事实依据的次级说明；普通字符串兼容结构见 [普通标题最小配置](references/model-spec.md#普通标题最小配置)。`options.config.title` 和 `options.config.label` 不在加载白名单中，会被忽略；普通数值标签写入实际 series 的 `spec.label`，共同配置也可使用 `config.dataGroupSpec.EDITOR_ALL_DATA_GROUP.label`，具体分组再按真实 groupKey 覆盖；不得猜测多系列 ID。交付或写卡前按 [commonOption 交付前校验](references/workflow.md#commonoption-交付前校验) 检查最终 JSON，修正全部错误后再交付。
-- `seriesLabel`、`totalLabel`、普通 `label`、标签引导线和 `barLink` 是不同能力。 多系列线图/面积图已有完整图例时，通常显式关闭各真实 series 的 `seriesLabel`，避免重复标识；关闭普通 `label` 不会同时关闭 `seriesLabel`。用户明确要求二者并存时保留。
+- `seriesLabel`、`totalLabel`、普通 `label`、标签引导线和 `barLink` 是不同能力。`barLink` 默认关闭；仅当用户明确要求，或类别是时间/阶段/已声明顺序、堆叠层在相邻类别间含义一致、且任务明确比较累计总量或构成边界的相邻变化时，才在支持模板的首次 `commonOption.options.config` 写 `barLink:{enable:true}`。无序类别、排名/独立快照、层集合不一致、单层、group、密集或无法解释的正负/零基数时保持关闭。物化并 readback 后，对于最终有超过一个可见堆叠分类/series 的 `bar`、`barPercent`、`horizontalBar`、`horizontalBarPercent`，仍必须在每个实际 series 的 `modelSpec.spec` 中手动写 `seriesLabel.visible:true`；即使多级分类会让模板默认关闭也要恢复。用户明确要求关闭或二者并存时优先。
 - **新建图表的业务数值默认开启千分位 `separator:true`**，适用于普通和 MBB 图；只调整显示格式，不把原始数值改成带逗号字符串，不改变精度、单位或百分比口径。日期、年份、编号等不按业务数值处理；用户明确要求关闭时优先遵从。standard 数据优先在列 `dataFormat` 统一配置单位、精度和千分位，普通值标签、可继承的数值轴及 Tooltip 不重复配置；仅对不同展示要求或不能继承的组件设置必要格式。继承条件与前后缀规则见 [默认千分位](references/data-and-formatting.md#默认千分位)。
 - 新建图表的适用值轴通过父轴 `visible:true` 及 `title.visible/text` 显式显示可解释的指标名、数值或占比标题；无业务单位时不编单位。轴标题已明确单位时，按 [轴单位去重](references/data-and-formatting.md#轴标题与刻度的单位去重) 省略刻度中的同一单位，保留数值缩放及柱标签、Tooltip 的单位。轴标题、刻度、离散图例项、普通数据标签省略新增 `fontSize/fontFamily` 等文字样式覆盖，继承图表助手主题；不固定12px，也不换成另一组硬编码字号。用户明确字号优先，已有样式按授权范围保留；不因默认规范启用用户不需要的标签或猜测模型 ID。按 [字体与轴配置](references/model-spec.md#默认字体与轴标题配置) 写入已支持的字段。
 - **内置模板的位置默认值必须保留。** 用户未明确指定组件位置时，轴 `title` 必须省略 `position/angle/autoRotate`，普通值 `label` 必须省略 `position/offset`，让内置模板决定布局；只要求“显示轴标题/显示数值标签/设置格式”不构成位置要求。只有用户明确要求开始/中间/末端、柱内/柱外/顶部等位置时，才生成相应布局覆盖字段。内置 `bar` 的普通值标签默认是 `inside`。窄例外：用户明确要求柱与数值标签同色，且默认柱内位置会使文字不可读时，按 [同色标签可读性](references/labels.md#同色标签可读性) 使用合法柱外位置，保留显式颜色；用户同时明确柱内位置时先澄清冲突，不擅自改色或移位。

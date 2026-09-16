@@ -43,6 +43,8 @@ type ChartLabel = {
 
 虚实折线拆出的时间段不等于独立业务对象。单对象分段图即使不显示图例，也默认显式关闭实际 series 的 `seriesLabel`；普通 `label` 的开关不能代替它。线型说明与多对象处理见 [虚实折线](solid-dashed-line.md#系列名与数值标签分别处理)。
 
+`bar`、`barPercent`、`horizontalBar`、`horizontalBarPercent` 的最终可见堆叠分类/series 超过一个时，反向采用显式开启：对每个实际 series 的 `modelSpec.spec` 写 `{ "seriesLabel": { "visible": true } }`。这覆盖多级分类时的模板默认关闭；先物化/readback 取得真实 `id/specIndex`，不根据输入列数或数组下标编造。单层堆叠、group 模板和用户明确关闭不适用。
+
 ```ts
 type SeriesLabel = {
   visible?:boolean;position?:"start"|"end"|"both-ends";

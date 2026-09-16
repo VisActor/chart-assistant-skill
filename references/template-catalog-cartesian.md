@@ -7,7 +7,7 @@
 - 用途：多个可相加系列的离散类别纵向比较；多数值列默认堆叠，适合总量与构成同时表达。
 - 数据：至少一个维度字段和一个可度量数值字段。推荐 `columns: [类别, 系列A, 系列B...]`；`x: 类别`, `y: [系列A, 系列B]`。
 - 编辑：轴、图例、常规标签、`seriesLabel`、`totalLabel`、`barLink`、barWidth、crosshair、tooltip、完整差异 marker、分组/单图元样式。
-- 联动：`barLink` 只连接堆叠系列；`mappingSpec.x` 含两个维度时模板会关闭 `seriesLabel`；V2 默认 barWidth 75%，totalLabel 默认可见。
+- 联动：`barLink` 只连接堆叠系列，默认关闭；仅在有序类别、稳定层语义且任务分析相邻累计/构成边界变化时开启。多级分类使模板关闭 `seriesLabel` 时，物化后仍必须在每个实际 series 的 `modelSpec.spec` 手动恢复 `seriesLabel.visible:true`；V2 默认 barWidth 75%，totalLabel 默认可见。
 - 不适用：连续时间精细趋势、类别极多且标签长、单数据组的独立比较、完全独立并列比较。只有一个可见数据组时默认用 `barGroup`；简单宽表可用单个 `y` 预判，长表/第二维度先核对物化后的 series 基数。只有用户显式要求本模板或需要其独有的 `seriesLabel`、`totalLabel`、`barLink` 时才例外。
 - 最小映射：`{"x":"月份","y":["A销售额","B销售额"]}`。
 - MBB：月份等时间维度按真实先后；无固定顺序的总量排名才按可相加的系列合计降序，指定系列排名则按该系列，执行方式见 [排序规则](data-and-formatting.md#5-排序规则)；主系列用 focus，其余弱化；连接线只在需要强调构成沿类别变化时开启。
@@ -33,6 +33,7 @@
 - 用途：各类别内部合计为 100% 的构成比较。
 - 数据：维度 + 至少两个非负数值系列；模板负责百分比展示，不要求输入已除以总量。
 - 编辑：同 `bar`，并使用百分比 formatter；`seriesLabel`、`totalLabel`、`barLink` 均在能力集合中。
+- 联动：`barLink` 默认关闭；仅在有序类别且任务明确分析相邻构成迁移时开启。最终可见堆叠分类/series 超过一个时，仍在每个实际 series 的 `modelSpec.spec` 手动写 `seriesLabel.visible:true`，不依赖模板默认值。
 - 限制：总计标签默认关闭；绝对规模差异会被隐藏，必要时补注绝对值或换图。
 - 最小映射：`{"x":"地区","y":["线上","线下"]}`。
 - MBB：仅用于份额问题；固定系列颜色和堆叠顺序；关键份额直接标注。
@@ -42,7 +43,7 @@
 - 用途：多个可相加系列的横向比较、排序或堆叠构成。
 - 数据：映射 `x` 填业务维度，`y` 填数值指标；可有多个系列。模板根据 horizontal 方向将维度放到视觉纵轴、指标放到视觉横轴，不要交换映射字段。
 - 编辑：轴、图例、常规标签、`seriesLabel`、`totalLabel`、`barLink`、barWidth、完整差异 marker。
-- 联动：V2 默认显示图例，数值轴可隐藏；两级分类同样会关闭 seriesLabel。
+- 联动：V2 默认显示图例，数值轴可隐藏；`barLink` 默认关闭，只有有序类别且任务分析相邻累计/构成边界变化才开启；多级分类时模板可能关闭 `seriesLabel`，物化后仍必须在每个实际 series 的 `modelSpec.spec` 手动恢复 `seriesLabel.visible:true`。
 - 不适用：连续时间趋势、类别顺序不应排序的场景、单数据组的独立比较。只有一个可见数据组时默认用 `horizontalBarGroup`；简单宽表可用单个 `y` 预判，长表/第二维度先核对物化后的 series 基数。只有用户显式要求本模板或需要其独有的 `seriesLabel`、`totalLabel`、`barLink` 时才例外。
 - 最小映射：`{"x":"国家","y":["收入"]}`。
 - MBB：排名类按明确主要指标降序，用户指定/固定业务顺序优先，见 [排序规则](data-and-formatting.md#5-排序规则)；正负值使用语义色；标签放在条末或条内，避免单独图例。
@@ -61,6 +62,7 @@
 - 用途：多类别的 100% 横向构成，尤其适合长标签。
 - 数据：映射 `x` 填业务维度，`y` 填至少两个数值系列；横向视觉轴由模板交换。
 - 编辑：轴、图例、常规标签、seriesLabel、totalLabel、barLink、百分比 formatter。
+- 联动：`barLink` 默认关闭；仅在有序类别且任务明确分析相邻构成迁移时开启。最终可见堆叠分类/series 超过一个时，仍在每个实际 series 的 `modelSpec.spec` 手动写 `seriesLabel.visible:true`，不依赖模板默认值。
 - 限制：隐藏绝对规模；类别过多时只保留关键份额标签。
 - 最小映射：`{"x":"渠道","y":["新客","老客"]}`。
 - MBB：固定堆叠顺序，突出目标份额，其他段使用 context 色。
