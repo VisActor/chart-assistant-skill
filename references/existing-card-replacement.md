@@ -28,7 +28,7 @@ DELETE /open-apis/docx/v1/documents/:document_id/blocks/:parent_id/children/batc
 ## 1. 读取与计划
 
 1. 确定唯一 `document_id + old_block_id`。读取文档版本、旧 block 及其父 block 的 children；验证旧 block 恰好出现一次，类型为 40，component_type_id 可确认为图表助手组件，记录旧组件类型；旧组件类型不决定新卡类型。
-2. 按步骤6投影后保存本次任务的完整旧 record 基线、父 ID、位置、文档 revision 和稳定请求 ID。任务资料置于受限存储，不包含 access token；对外仅给摘要和必要 ID。
+2. 原始响应在宿主内存中按步骤6检查和投影后，才保存本次任务的编辑基线、父 ID、位置、文档 revision 和稳定请求 ID；基线仅移除步骤6允许的实例字段，其余完整保留，不是精简证据投影。模型输出、日志和临时文件同样不能先接收原始凭证。任务资料置于受限存储，不包含 access token；对外仅给摘要和必要 ID。重读旧/新卡也须先过滤，不因首次创建无凭证就信任后续响应。
 3. 解析 `add_ons.record` JSON，再解码 browserData。数组、JSON 字符串和压缩保存态按真实编码读取。数据库引用必须由已有授权解析能力读取；不支持解析时拒绝，不能把引用当数组或重新生成空图。
 4. browserData 为当前保存态，commonOption 用于原有 hydration，不能取代人工修改后的 browserData。只有初始化 commonOption 且无 browserData、无非空顶层 URL 的单图 standard 卡片，可直接编辑已验证的初始化属性；当前只开放 options.config.color 配色数组。存在 browserData 时禁止回退，URL 驱动卡片仍需可靠物化。
 5. 在深拷贝上按用户意图修改支持的属性，完整比较变化。保留数据、映射、来源/同步、其他标注、未知扩展字段、原 dataVersion、commonOption、人工尺寸及自动适配状态。目标不唯一或需要未知 runtime identity 时返回候选/受限，不猜 key。

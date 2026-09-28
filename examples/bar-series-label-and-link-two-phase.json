@@ -21,7 +21,11 @@
             },
             "config": {
               "mappingSpec": { "x": "月份", "y": ["产品A", "产品B"] },
-              "barLink": { "enable": true }
+              "barLink": { "enable": true },
+              "modelSpec": [
+                { "specKey": "series", "target": { "measure": "产品A" }, "spec": { "seriesLabel": { "visible": true } } },
+                { "specKey": "series", "target": { "measure": "产品B" }, "spec": { "seriesLabel": { "visible": true } } }
+              ]
             }
           }
         }
@@ -29,14 +33,12 @@
     }
   },
   "phase2AfterReadback": {
-    "precondition": "示例假设 phase1 的 browserData/runtime readback 返回 id=series-runtime-id、specIndex=0；实际执行必须替换为真实值",
-    "modelSpecPatch": {
-      "id": "series-runtime-id",
-      "specKey": "series",
-      "specIndex": 0,
-      "spec": { "seriesLabel": { "visible": true } }
-    },
+    "precondition": "仅当宿主不支持语义 target 时使用。示例假设 browserData/runtime readback 返回 id=series-runtime-id、specIndex=0；实际执行必须分别替换两个系列的真实值",
+    "modelSpecPatch": [
+      { "id": "产品A-readback-id", "specKey": "series", "specIndex": 0, "spec": { "seriesLabel": { "visible": true } } },
+      { "id": "产品B-readback-id", "specKey": "series", "specIndex": 1, "spec": { "seriesLabel": { "visible": true } } }
+    ],
     "mergeRule": "按真实 identity 深合并到已有 modelSpec，保留 axes/title/legend/其他 series；不要替换整个数组。"
   },
-  "note": "barLink 不依赖 model identity，可在 phase1 开启；seriesLabel 的 canonical path 是 modelSpec，因此通常需要 phase2。"
+  "note": "支持语义 target 的宿主可在首次 commonOption 同时开启 barLink 和两个系列标签；不支持时先创建、readback，再按两个真实 identity 分别补 modelSpec。"
 }

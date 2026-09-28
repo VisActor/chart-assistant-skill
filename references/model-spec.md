@@ -2,6 +2,8 @@
 
 `modelSpec` 是图表内部 VChart model 的持久化增量，不是任意配置袋。已有原生身份可直接复用；没有身份时，受支持的 series/axes/legends 可使用 [业务 target 输入](element-editing.md#0-语义-target只补现有-dsl-的定位)，实例编译后仍保存原结构。
 
+每个条目都必须包含 `specKey` 和对象形式的 `spec`。坐标轴写成 `{id:"axis-left",specKey:"axes",specIndex:0,spec:{...轴配置}}`，或受支持的 `{specKey:"axes",target:{field:"原始字段"},spec:{...轴配置}}`；不要把 `{orient:"left",type:"linear",label:...}` 裸轴对象放进 `modelSpec`。裸轴形状仅用于 `options.spec.axes` 的原生 VChart spec；编辑器会按 `specKey` 筛选组件，放错层级可能不报错却忽略轴设置。交付前运行结构校验，不能以加载没有崩溃判定设置已生效。
+
 ## 1. 组件身份：`id`、`specKey`、`specIndex`
 
 ```ts
@@ -32,7 +34,7 @@ interface IModelSpec extends ModelIdentity {
 
 需要显示轴或轴标题时，父轴的 `spec.visible:true` 与 `title.visible:true` 分别设置；子项可见不会覆盖父轴隐藏。当前横条模板默认隐藏 `axis-bottom` 值轴：需要数值/占比轴时，在 `axis-bottom/specIndex:1` 上显式写 `visible:true`，再配置标题和刻度；左侧仍为分类轴。已有图只改标签格式或局部样式时，保留用户原轴可见性。
 
-series ID 由模板数据对象生成，通用形式为 `series-${runtimeDataId}`，不是业务字段名。对“一个维度列 + 一个指标列”的最小 standard bar，当前标准数据转换会生成唯一 `runtimeDataId = "0"`，因此可验证为 `id:"series-0", specKey:"series", specIndex:0`。只要存在多个维度、多个指标、mapping 重排、双轴、瀑布、风神或导入 spec，就不得外推这个结果，必须物化/readback。
+series ID 由模板数据对象生成，通用形式为 `series-${runtimeDataId}`，不是业务字段名。对恰好两列、首列为维度且第二列为唯一指标的 standard `barGroup` 或 `pie`，当前转换生成唯一 `runtimeDataId = "0"`；模板系列身份确定为 `id:"series-0", specKey:"series", specIndex:0`，可直接生成配置，无需为获取此身份先渲染。`pie` 的 `mappingSpec` 省略或仅映射这两个字段时，可用该身份设置 `innerRadius` 和普通标签。多个维度、多个指标、mapping 选择其他指标、双轴、瀑布、风神或导入 spec 不在此例外内；使用实际身份或受支持的业务 target，不外推 `series-0`。
 
 LLM 写入策略：
 
@@ -111,10 +113,10 @@ type AxisModelSpec = ModelIdentity & { specKey:"axes"; spec:{
 
 只调整标签显示，保留数据、全部分组字段和 `mappingSpec`，不通过删维度、合并类别或改变图型来隐藏内层标签，也不以 `label.visible:false` 关闭整条轴的标签。用户明确要求展示全部层级时才设 `showAllGroupLayers:true`；局部编辑保留用户原有的层级显示设置。
 
-`title.position/angle/autoRotate` 都是布局覆盖，不是展示轴标题的必填字段。首次创建内置模板时，如果用户只要求显示左轴标题，必须只写 `title.visible/text/style`，省略这些布局字段，让模板和 VChart 决定默认位置。用户明确要求轴标题位于开始、中间或末端时，才生成对应的 `position`。
+`title.position/angle/autoRotate` 都是布局覆盖，不是展示轴标题的必填字段。首次创建内置模板时，如果用户只要求显示左轴标题，显式开启父轴 `visible:true`，标题只写 `title.visible/text` 及必要样式，省略这些布局字段，让模板和 VChart 决定默认位置。用户明确要求轴标题位于开始、中间或末端时，才生成对应的 `position`。
 
 ```json
-{"title":{"visible":true,"text":"销售额"}}
+{"visible":true,"title":{"visible":true,"text":"销售额"}}
 ```
 
 ## 4. Title、Legend、Region、Tooltip、Crosshair
@@ -178,7 +180,7 @@ Legend 的复合对象随离散/连续图例不同，只写已知意图所需字
 
 ### MBB 富文本标题
 
-所有新建图表默认使用下面的 rich title 结构，配色可由模型从内置候选池选择，不影响标题规范；不要写 `subtext`。主标题22px、600字重、28px行高；次级说明12px、18px行高；左对齐并继承原生fontFamily。用户指定的主标题原文必须保留，次级说明仅在需要补充时间、范围、指标或单位时填写；已有表达充分时省略次级片段及换行，不编造业务单位。下面展示含必要次级说明时的结构：
+所有新建图表默认使用下面的 rich title 结构，配色可由模型从内置候选池选择，不影响标题规范；不要写 `subtext`。主标题22px、600字重、28px行高；次级说明12px、18px行高；左对齐并继承原生fontFamily。用户指定的主标题原文必须保留，次级说明仅在需要补充时间、范围、指标或单位时填写；已有表达充分时省略次级片段及换行，不编造业务单位。下面是**已确认浅色背景**且含必要次级说明的示例；其中颜色不是所有主题通用的固定值：
 
 ```json
 {
@@ -193,6 +195,10 @@ Legend 的复合对象随离散/连续图例不同，只写已知意图所需字
   }
 }
 ```
+
+新建图的默认 rich 标题按已确认的实际背景选择前景：浅色背景可使用上述主标题 `#0F172A`／次级说明 `#64748B`；已确认 `clarity-dark` 且实际背景为 `#202226` 时，默认主标题用 `#F8FAFC`、次级说明用 `#CBD5E1`，其余字体层级和结构不变。其他背景使用与实际宿主背景可读的前景；背景未知时不猜主题或背景，不声称已完成主题适配，并将实际背景和图面可读性保留为待核验。仅有主题名称不证明画布背景已同步，也不证明显式 rich item 的 `fill` 会自动反色。
+
+以上仅用于新建且无用户显式配色的默认标题。用户指定配色及已有标题的原文、颜色和字体层级保持，不能凭某个色值认定它是默认样式；切主题不得自动全局重置用户标题或其他图元。若既有标题颜色与新背景冲突，明确说明并按授权范围局部处理，分别核对样式保留和实际可读性。颜色方案须经真实图面验证，规则本身不构成模型或市场验收。
 
 换行符属于 rich `text[]`。`align` 位于 `textStyle`，不是 title spec 根级。当前标题 rich item 没有可点击 URL 字段；不要发明 `href/url/onClick`。
 
@@ -265,3 +271,20 @@ Label 的完整 discriminated union、position 和 format content 见 [labels.md
 - 更新 series 前同时检查模板能力、实际 series 类型和数据层级。
 - `_editor_*`/`_origin*` 字段编辑已有状态时保留；从零只生成这里明确列出的 `_editor_axis_orient`、`_editor_spec_size`。
 - JSON record 内禁止函数、`undefined`、循环引用和凭证。
+
+## 新开发宿主：统计与持续评价的保存协议
+
+这两项是 `options.config` 顶层字段，不能放进 `modelSpec[].spec` 或 `mappingSpec`。目标宿主需明确支持本轮新增协议；不据版本号或 Skill 加载推定生产已有。定义见[统计与评价配方](business/recipes/statistical-and-evaluation.md)。
+
+```ts
+statistics:
+  | {kind:"histogram"; input:"samples"; measure:"count"|"density"; boundaries:number[]; closure:"left-closed-last-inclusive"}
+  | {kind:"histogram"; input:"bins"; measure:"count"|"density"}
+  | {kind:"boxPlot"; input:"fiveNumber"}
+  | {kind:"boxPlot"; input:"samples"; quartileMethod:"linear-r7"; whiskerMethod:"tukey"; whiskerMultiplier:1.5};
+businessContext: {version:1; comparisons:{markerId:string; metricDirection:"high"|"low"|"unknown"}[]};
+```
+
+statistics 与 native chartType 必须一致；分箱边界或样本箱线算法没有默认补猜。新增 histogram/boxPlot 的 axes 顺序为 axis-bottom:0、axis-left:1，不能套普通柱图的索引。原始数据保持，统计结果只用于运行时派生。
+
+businessContext 仅绑定 standard hierarchy-diff-line 的 marker.id，from/reference、to/actual 复用该 marker 完整业务端点；评价用原值且不改变原数学内容。high 高好、low 低好、相等中性、unknown 不判好坏。默认语义色低于作者显式覆盖，方向保存在作者态，自动色不保存在作者态。业务上下文不是经营评价公式，不自动着整组柱色或更新静态标题；真实宿主和来源同步仍需分别验证。

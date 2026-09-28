@@ -2,13 +2,13 @@
   "commonOption": {
     "elements": [
       {
-        "id": "sales-line-mar-sep",
+        "id": "actual-forecast-sales",
         "type": "chart",
         "options": {
           "chartType": "line",
           "config": {
             "dataGroupSpec": {
-              "3—5月": {
+              "实际": {
                 "label": {
                   "visible": false
                 },
@@ -32,7 +32,7 @@
                   "visible": true
                 }
               },
-              "6—9月": {
+              "预测": {
                 "label": {
                   "visible": false
                 },
@@ -61,8 +61,8 @@
             "mappingSpec": {
               "x": "月份",
               "y": [
-                "3—5月",
-                "6—9月"
+                "实际",
+                "预测"
               ]
             },
             "modelSpec": [
@@ -75,10 +75,10 @@
                       "fontSize": 22,
                       "fontWeight": "600",
                       "lineHeight": 28,
-                      "text": "3—9 月销售走势"
+                      "text": "2026年1—6月销售额实际与预测"
                     },
                     {
-                      "text": "\n6—9月使用虚线",
+                      "text": "\n实线：实际（截至3月）；虚线：已给定预测（4—6月）",
                       "fontSize": 12,
                       "fontWeight": "normal",
                       "lineHeight": 18,
@@ -116,7 +116,7 @@
                     "visible": false
                   },
                   "title": {
-                    "text": "销售数据",
+                    "text": "销售额",
                     "visible": true
                   },
                   "type": "linear"
@@ -137,7 +137,17 @@
                   "title": {
                     "visible": false
                   },
-                  "type": "band"
+                  "type": "band",
+                  "sampling": false,
+                  "label": {
+                    "visible": true,
+                    "autoHide": true,
+                    "autoRotate": false,
+                    "overlapStrategy": "autoHide",
+                    "style": {
+                      "angle": -0.7853981633974483
+                    }
+                  }
                 },
                 "specIndex": 1,
                 "specKey": "axes"
@@ -194,54 +204,48 @@
               ],
               "columns": [
                 "月份",
-                "3—5月",
-                "6—9月"
+                "实际",
+                "预测"
               ],
               "data": [
                 {
-                  "3—5月": 30,
-                  "6—9月": null,
-                  "月份": "3月"
+                  "月份": "2026-01",
+                  "实际": 100,
+                  "预测": null
                 },
                 {
-                  "3—5月": 25,
-                  "6—9月": null,
-                  "月份": "4月"
+                  "月份": "2026-02",
+                  "实际": 110,
+                  "预测": null
                 },
                 {
-                  "3—5月": 30,
-                  "6—9月": 30,
-                  "月份": "5月"
+                  "月份": "2026-03",
+                  "实际": 105,
+                  "预测": 105
                 },
                 {
-                  "3—5月": null,
-                  "6—9月": 27,
-                  "月份": "6月"
+                  "月份": "2026-04",
+                  "实际": null,
+                  "预测": 120
                 },
                 {
-                  "3—5月": null,
-                  "6—9月": 32,
-                  "月份": "7月"
+                  "月份": "2026-05",
+                  "实际": null,
+                  "预测": 125
                 },
                 {
-                  "3—5月": null,
-                  "6—9月": 35,
-                  "月份": "8月"
-                },
-                {
-                  "3—5月": null,
-                  "6—9月": 40,
-                  "月份": "9月"
+                  "月份": "2026-06",
+                  "实际": null,
+                  "预测": 130
                 }
               ],
               "rows": [
-                "3月",
-                "4月",
-                "5月",
-                "6月",
-                "7月",
-                "8月",
-                "9月"
+                "2026-01",
+                "2026-02",
+                "2026-03",
+                "2026-04",
+                "2026-05",
+                "2026-06"
               ]
             }
           },
@@ -259,5 +263,8 @@
       }
     ],
     "theme": "clarity-light"
+  },
+  "option": {
+    "loadContribute": "view"
   }
 }

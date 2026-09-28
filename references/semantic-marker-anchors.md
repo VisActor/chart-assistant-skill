@@ -70,7 +70,7 @@ type DataTarget = {
 
 - total / growth 选择可比总量；分组柱的一组是独立总量，堆叠的一个层不能冒充总计。
 - hierarchy 的 boundary 只决定线连接本层的哪条边界，默认 end；同一段 start 到 end 合法，完全相同对象和边界则无效。新内容类型比较层自身，不从线的累计高度推导标签数值。
-- 新建层级标注显式填写下面的内容类型；旧卡片的 `value/percentage/pp/percentdiff` 及缺省值保留原公式，不在改样式、保存或同步时替换。只有用户明确切换内容类型，才采用新口径。
+- 层级标注先确定计算对象，再显式选择内容：比较层自身的值或份额用下表的 `layer*`；用户明确比较累计 `start/end` 边界之差时使用 `value`，端点保留指定 `boundary`。这不是新建与旧卡的区别，新建累计边界标注也可使用 `value`。旧卡片的 `value/percentage/pp/percentdiff` 及缺省值保留原公式，不在改样式、保存或同步时替换；只有用户明确切换比较口径时才迁移。
 
 用户要求同一百分比指标的百分点差时，使用 `label.formatConfig.content:["percentPointDiff"]`，例如利润率 20%→30% 为 +10 pp；相对增长 +50% 则是另一种含义。两端须有真实百分比声明及可比较尺度，不能因数值在 0–1、指标名含“率”或模板为百分比图就推断。普通数值或无法确认尺度时不生成该内容。旧 `pp` 仅保留存量兼容，不用于新生成，也不在普通保存时自动替换；无须增加版本字段。比较堆叠层的归一占比仍用下表 `layerShareDiff`。
 
@@ -83,9 +83,9 @@ type DataTarget = {
 | `layerShareDiff` | 本层新占比减旧占比，单位 pp | +10 pp |
 | `layerShareGrowthRate` | 本层占比差除以本层旧占比 | +50% |
 
-- 普通新建选择 `layerValueDiff`，百分比堆叠新建选择 `layerShareDiff`；用户要求增长率时先辨明是原值还是占比增长。四种内容仅用于 hierarchy，不能放入 total/growth。
+- 比较本层原值差选择 `layerValueDiff`，比较本层归一占比差选择 `layerShareDiff`；不因新建或使用百分比模板就忽略用户指定的累计边界口径。用户要求增长率时先辨明是原值、占比还是累计边界的增长。四种 `layer*` 内容仅用于 hierarchy，不能放入 total/growth。
 - 占比内容需要两端属于同一值轴、region 和可比较归一组的实际百分比堆叠；普通堆叠有原值不等于运行时已有归一占比。按下节配对模板和内容，未知组合先说明缺项，不猜分母。
-- 同一 B 层同一类别 start→end 的本层差为 0，即使线跨越该层的高度；若用户要求累计边界差，不能用本层差冒充。已有旧边界格式保留兼容，不自动迁移。
+- 同一 B 层同一类别 start→end 的本层差为 0，即使线跨越该层的高度；累计边界 `value` 则比较两端边界数值，不能用本层差冒充。若已确认 A 位于最上层，Q1 的 A/B 为 100/50、Q4 为 150/90，则 A 的 end 为 150→240，边界差与整栈差均为 +90；A 自身差为 +50。此层序必须来自实际模板或运行时证据，不能由 `mappingSpec.y` 的字段顺序推定。最终标题、标注与回复使用同一口径；没有边界证据时不宣称具体累计差值已核实。
 - 如 B 在 Q1 的累计边界是 20%→50%，Q4 是 40%→80%，本层份额为 30%→40%，`layerShareDiff` 为 +10 pp，而不是顶部累计值之差 +30 pp。
 - 当前语义子集对无法唯一解释的正负总计、不同轴/单位/region 和未知转换报告不支持或歧义；不猜净值或端点。这些限制不是永久排除项，须审计旧端点选择/创建/拖动的实际支持；有旧能力及可比依据则补适配，确实不支持才保留正式限制。
 - 百分比整栈总计的定位与业务总量分开：零栈边界为 0，全正为 1，全负为 -1；混合正负没有唯一边界时不绘制整条总计/增长标注并保留定义，不能用净值或固定 100% 冒充边界。标签计算仍使用图表实际业务总量，不把定位的 ±1 当作业务值。
@@ -96,7 +96,9 @@ type DataTarget = {
 
 按参考图还原差异标注，或用户只说“标出差异”而未指明比较对象时，先判别类型再写 from/to。先看差异段位置：端点侧面的竖直差异段通常用 `hierarchy-diff-line`，顶部横向括号通常用 `total-diff-line`。斜向直线只有在比较两个总量端点、年度口径已声明且标签为年化含义时才用 `growth-line`；层边界、同类别系列或阶段贡献段即使以斜线连接，仍按其比较对象和口径选择 hierarchy。形态、连接对象和标签口径必须相互一致，不能只凭其中一个字段定型。
 
-同时支持 total 与 hierarchy 的图类：纵向柱（`bar`、`barGroup`、堆叠柱、`barPercent`）、横向条（`horizontalBar` 系列）、`line`、`area`/`areaPercent`、`dualAxis`、`waterfall`/`waterfallDecrease`、`mekko`/`mekkoPercent`；`growth-line` 除 Mekko 禁用外范围相同。scatter、histogram 与饼类不支持这些差异标注。
+同时支持 total 与 hierarchy 的图类：纵向柱（`bar`、`barGroup`、堆叠柱、`barPercent`）、横向条（`horizontalBar` 系列）、`butterfly`、`line`、`area`/`areaPercent`、`dualAxis`、`waterfall`/`waterfallDecrease`、`mekko`/`mekkoPercent`；`growth-line` 除 Mekko 禁用外范围相同。scatter、histogram 与饼类不支持这些差异标注。
+
+`butterfly` 的差异标注只能在**单侧内部**比较，`from`/`to` 两端必须同属左侧或同属右侧，并绑定该侧的 `relativeSeriesId`；跨中轴比较左右两根柱子不受支持。
 
 形态即类型身份，与运行时默认 connectDirection 一致；按下表默认形态直接定类型，不用比较对象反推：
 
@@ -110,7 +112,7 @@ type DataTarget = {
 - 上表方向与形态是运行时默认值；模型不因参考图形态显式复刻 `connectDirection`/`expandDistance`，显式 `connectDirection` 只是样式覆盖，不改变类型身份。
 - **分组柱两种类型都可能**：`barGroup` 同类别两个系列的比较，顶部横括号形态用 `total-diff-line`，侧面竖直差异段形态用 `hierarchy-diff-line`；同一比较语义可以用任一类型表达。只有没有参考图、用户也未指定形态时，才按语义默认：堆叠层/同类别系列等层级比较默认 hierarchy，整柱/总量比较默认 total。from/to 始终写完整业务键（分组值与 metric），不能用省略组值把分组柱强行合计。
 - **growth-line 与 total 同属总量端点类**，按线型与口径区分：growth 默认是连接两个偏移后端点的直实线（非 type-step 阶梯、无 cornerRadius、无 connectDirection/expandDistance），仅 endSymbol 实心单箭头，跨多个时间类别时呈斜向直线，标签默认 `CAGR`（多年复合年化，端点须满足 §3.1 年度字段声明）；total 是阶梯横括号线，标签默认 `percentage`（两端相对变化）。参考图中 2018→2022、2023→2026 各一条斜向上箭头配 % 标签是两条 growth-line；两根柱子之间的 +120%（(587-267)/267）只是两端增长率，形态为侧面竖段时是 `hierarchy-diff-line` + `layerGrowthRate`，为顶部括号时是 `total-diff-line` + `percentage`，都不是 CAGR——同数据 2010→2017 的 CAGR 约 +11.9%/年。
-- 标签内容可辅助复核：`layerValueDiff`/`layerGrowthRate`/`layerShareDiff`/`layerShareGrowthRate` 仅用于 hierarchy；total/growth 使用 `value`/`abs`/`percentage`/`percentPointDiff`/`CAGR`。旧 hierarchy 卡片可保留 `value/percentage/pp/percentdiff` 旧公式，因此内容类型只能单向佐证（出现 layer* 必为 hierarchy），不能反推 total。
+- 标签内容可辅助复核：`layerValueDiff`/`layerGrowthRate`/`layerShareDiff`/`layerShareGrowthRate` 仅用于 hierarchy；total/growth 使用 `value`/`abs`/`percentage`/`percentPointDiff`/`CAGR`。hierarchy 的累计边界差也使用 `value`，旧卡片的 `percentage/pp/percentdiff` 等保留原公式。因此内容类型只能单向佐证（出现 layer* 必为 hierarchy），不能因 `value` 反推 total 或改为本层差。
 - **标注类型与标签口径是两次独立判断**：仅更换 marker 类型不会修正标签分母。按参考图识别百分比数值标签时先核算分母：差值 ÷ 另一端点原值 = 增长率（`layerGrowthRate`）；同类别同堆叠组内两端占比之差（等值于差值 ÷ 该类别总量）= 占比差（`layerShareDiff`，带 pp 后缀）；差值本身 = `layerValueDiff`。例如 Production 185 与 Development 103 的差值 82 若以同年总量 303 为分母约为 27%，但参考图未明确分母时这只是候选口径，必须确认后再生成。占比内容只在百分比模板（`barPercent`/`areaPercent`/`mekkoPercent`）上可用，普通 `bar`/`barGroup` 上会报“占比内容要求两端属于可比较的实际百分比堆叠及同一值轴”。非百分比图上想表达“差额/类别总量”时，参考图也构成图型与表达约束；只有用户明确接受百分比图时才切换模板。否则说明当前动态计算缺口，不能用增长率冒充，也不能为满足标注而丢失分组、配色或图例，见 [局部修正时保留完整表达](workflow.md#局部修正时保留完整表达)。
 - 反例：单系列两根柱之间（如 2010:267→2017:587 的 +120%）差异竖段画在端点侧面时仍是 `hierarchy-diff-line`（标签 `layerGrowthRate`），不因“两柱总量比较”写成 total；分组柱同类别两系列上方的顶部横括号是 `total-diff-line`，不因“同类别两系列”写成 hierarchy。形态无法从参考图确认时，说明缺项并核对，不按对象猜类型。
 
@@ -124,10 +126,11 @@ type DataTarget = {
    | --- | --- | --- |
    | 本层原值差 / 原值增长率 | `layerValueDiff` / `layerGrowthRate` | `bar`、`barGroup`、`horizontalBar` 系列、`line`、`area`、`dualAxis`、`waterfall`/`waterfallDecrease`、`mekko`，也可用于对应百分比模板的原值比较 |
    | 本层归一占比差 / 占比增长率 | `layerShareDiff` / `layerShareGrowthRate` | `barPercent`、`areaPercent`、`mekkoPercent` |
+   | 明确指定的累计 start/end 边界差 | `value`，同时保留两端 `boundary` | 支持 hierarchy 且能确定可比边界的模板；核对实际层序、轴和数值尺度，不把本层原值当累计值 |
 
    用户未固定模板且明确要占比时，选对应百分比模板并保留原始数值，归一由运行时完成。用户明确要求保留普通堆叠并比较占比时，说明当前组合不支持，询问是否接受百分比图；不能自行改成原值差或换图。双轴、导入 spec、URL 图和模型覆盖不按这张表猜实际 percent，须核对运行时实际系列、轴及归一组。
 
-2. **选择有意义的连接边界。** `boundary` 控制累计位置，`content` 控制本层计算，二者分别确定。百分比图的最上层 `end` 往往两端都是 100%，最下层 `start` 往往都是 0；两端位置相同会让差异段退化，即使标签计算正确。未指定边界时，按实际堆叠顺序选能表达变化的另一边界：最上层通常选 `start`，最下层通常选 `end`。用户指定边界时保留并说明重合，不能偷偷换目标。不要仅凭 `mappingSpec.y` 的顺序猜视觉层序；不确定时依据模板契约或已有运行时元数据核对；仍无法确定时说明缺项，不为此自动安装或启动渲染环境。若两条边界都相等，如实表达零变化，不制造非零线段。
+2. **选择有意义的连接边界。** `boundary` 控制累计位置，`content` 决定比较本层还是累计边界，二者分别确定。百分比图的最上层 `end` 往往两端都是 100%，最下层 `start` 往往都是 0；两端位置相同会让差异段退化，即使本层标签计算正确。仅在比较本层且未指定边界时，按实际堆叠顺序选能表达变化的边界：最上层通常选 `start`，最下层通常选 `end`。用户比较累计边界时，换边界会改变计算对象，不能为了避免重合而自动更换；指定边界须保留并说明重合。不要仅凭 `mappingSpec.y` 的顺序猜视觉层序；不确定时依据模板契约或已有运行时元数据核对；仍无法确定时说明缺项，不为此自动安装或启动渲染环境。若所比较的两条累计边界相等，如实表达零变化，不制造非零线段。
 
    对照示例（以下层序已在对应示例中渲染核对，不推广为所有模板的固定层序）：
 

@@ -76,12 +76,13 @@
                 "specIndex": 0,
                 "spec": {
                   "orient": "left",
+                  "visible": true,
                   "type": "linear",
                   "zero": true,
                   "title": {
                     "visible": true,
                     "text": "销售额",
-                    "style": { "fill": "#475569", "fontSize": 12 }
+                    "style": { "fill": "#475569" }
                   },
                   "label": {
                     "visible": true

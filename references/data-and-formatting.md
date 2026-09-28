@@ -47,6 +47,10 @@ type ColumnFormat = {
 
 `editInfo` 是编辑器元信息；新建数据通常省略。`dataType` 影响 scatter/heatmap 等模板的字段解释，不能仅为了显示格式把文本 ID 改成 number。
 
+列类型与显示格式的枚举不同：分类列用 `dataType:"text"`，不是 `"category"`；数值列用 `dataType:"number"`，其普通数值显示使用 `dataFormat.dataType:"digit"`，百分比/千分比按既有语义使用 `"percent"`/`"permil"`，均不能写 `"number"`。也可省略不必要的格式字段，不能把轴类型或列类型复制到格式枚举。
+
+交付前硬核对（校验器会直接判失败，且不得带这些取值写卡）：`dataType` 合法值只有 `number | date | text`，`dataFormat.dataType` 合法值只有 `digit | percent | permil`。旧版或猜测取值 `category`、`number`（作格式）、`string`、`percent`（作列类型）一律改写为上述合法枚举；不确定某列类型时按数据实际内容选 text/number，不引入新枚举。
+
 明确年度语义时同时声明 `dataType:"date", timeUnit:"year"`；这使年度 CAGR 按真实年份差计算，不依赖行数。年份合法值、精确匹配及不可计算情况见[年度字段声明](semantic-marker-anchors.md#31-年度字段声明)，不能仅凭显示格式推断年份。
 
 ## 3. FormatConfig
@@ -188,6 +192,8 @@ type FormatConfig<T extends string = FormatContent> = {
 ```
 
 此时刻度显示 `0、50、100、150、200`，柱标签与 Tooltip 仍显示 `120万元` 等。双轴分别核对各自的单位，不能跨轴清除。该覆盖依赖支持显式空前后缀的运行时；旧宿主未支持时，标题只写指标名并让刻度保留单位，不能声称空串已生效。
+
+`unit:"none"` 只表示不做数值缩放，不能清除已继承的列 `postfix`。交付前逐轴核对：标题中的单位来自哪一列、刻度实际继承哪个字段、是否在 `contentFormat.value` 清除同一前后缀；不要把“设置了 unit:none”报告为“已去重”。
 
 `unit:"CN_W"/"K"/"M"/"auto"` 或 `dataType:"percent"` 等生成的缩放/百分号不是列 `postfix`，清空后缀不会移除它们。不能为去单位改成 `unit:"none"`、`dataType:"digit"`、改原始数据或乘除数值；现有格式能力不能仅隐藏这些符号时，新建轴标题只写指标名（如“收入”“占比”），让刻度保留缩放/百分号。已有图表仅在获准调整单位展示的范围内处理，明确指定的标题不擅自改写。
 

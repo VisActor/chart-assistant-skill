@@ -104,6 +104,7 @@ interface TableAttribute {
 - 重置单元格样式同时清理对应 PivotChart `chartOptions` 覆盖，实际图表 key 会加上行头/列头层数。运行时兼容映射项直接为 false 的旧删除输入，但新编辑应保留坐标并写 `style:false`，以便关联清理；false 是更新命令，不是最终保存的单元格样式。
 - `viewMode` 缺失或非法时规范为 `scroll`；旧布尔值 `true/false` 只作 `zoom/scroll` 兼容读取，新数据写字符串。
 - CommonOption 的标准数据入口写 `tableType:"ListTable"`，物化保存态会规范为内部模板名 `temp:"listTable"`；不要把两种命名互换。
+- 首次创建的 table `options.config` 只接受校验器 config 白名单键（`mappingSpec/modelSpec/marker/color/...`，与图表同一白名单，见 [交付前校验](workflow.md#commonoption-交付前校验)）；保存态专属字段（`showHeader/columns/records/theme/colWidth/...`）属于物化 `TableAttribute`，禁止凭源码类型定义写进首次创建的 `options.config`——校验器按 unsupported key 判失败。首行表头语义用标准数据的表头行或 `theme.enableFirstRowHeader` 表达，需要隐藏表头时先核对宿主是否支持该编辑，不支持则说明缺项而不是造键。
 - `keepStyle/dataTransposed/templateVersion` 与图表采用同一数据模板生命周期语义；`graphicOpacity` 作用于整个 table graphic root，通常写 `0..1`，不等于单元格背景透明度。
 - `cellStyle` 身份是保存的 `col + row`；行列增删、透视展开或源同步后必须重新校验。行列级覆盖同理，不把对象 key 当业务 ID。
 - `colVisible/rowVisible/colWidth/rowHeight/colStyle/rowStyle` 都以保存的行列索引命中；对象 key 只是编辑器生成的存储 key。`pivotColumnWidth` 以维度路径定位，不能退化为当前可视列号。
@@ -226,6 +227,7 @@ interface LineAttribute {
 ```
 
 - `startConnect/endConnect.target` 引用画布 element ID；复制、删除或替换目标元素时必须重写或清空。
+- 普通线即使是竖线或横线，`commonOption.elements[].position` 的 `width` 和 `height` 也都必须大于 0；线的方向由 `startPoint/endPoint` 表达，不能把外层矩形的某一边设为 0。交付完整画布前运行 commonOption 结构校验，失败时修正后再交付。
 - `ratio` 是目标边界上的运行时连接比例，不是数据坐标。
 - `maxCurveSize` 仅 elbowLine 生效；curveLine 的 controlPoints 由当前几何决定。无法取得布局时，优先创建不连接的直线，不猜控制点。
 

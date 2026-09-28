@@ -1,11 +1,17 @@
 ---
 name: chart-assistant
-description: 使用图表助手 DSL 创建、编辑、解释、校验和交付图表；覆盖完整 ILayerData 编辑态、commonOption 接入、全部内置模板与风神能力、URL 数据源同步、MBB 制图规范，以及新建飞书 Docx、向已有文档插入图表助手卡片或替换已有卡片。用户提到图表助手、内置模板、风神链接、飞书 Sheet/Base 链接、可同步图表卡片、MBB/咨询风，或要求把数据制成图表助手 DSL、把参考图片还原为图表卡片时使用。
+description: 使用图表助手 DSL 创建、编辑、解释、校验和交付可编辑图表；覆盖完整 ILayerData 编辑态、commonOption 接入、全部内置模板与风神能力、URL 数据源同步、MBB 制图规范，以及新建飞书 Docx、向已有文档插入图表助手卡片或替换已有卡片。用户明确提到图表助手、可编辑图表或配置、图表助手内置模板、图表助手卡片、数据源同步、将风神或飞书 Sheet/Base 链接制成可编辑图表，或要求可编辑图表的 MBB/咨询风样式及参考图片还原时使用，即使没有说出技能名。普通“做成图表”“画趋势图”等未要求上述产品能力的请求不主动接管；只要文字解释且不建图时不触发建图流程。
 ---
 
 # 图表助手
 
 为大模型提供图表助手产品契约。模型负责理解业务语义、识别字段、选择模板和生成配置；运行时负责鉴权、读取数据、同步和写入飞书；本 Skill 负责说明什么结构合法、什么能力真实存在、如何安全交付。
+
+## 建图入口与首答交付
+
+用户明确要求“图表助手”“可编辑图表/配置”“图表助手卡片”或数据源同步等产品能力时，即使没有写出技能名，也按图表助手建图请求处理。仅要求“做成图表”“建趋势图”“画条形图”而未要求这些能力时，不主动接管。进入本 Skill 后，首次建图交付可编辑的 `commonOption`；需要写飞书卡片时再按宿主接口包装为 record。普通 ECharts、HTML 预览或静态图片不能替代用户要的图表助手配置。若同时要求简短分析和建图，两项都完成，分析句数遵从用户限制；用户限定“只给”指定产物时，不另加验证过程、后续邀约或其他正文。少量时间点只描述已观察到的升降，不推断稳定状态或长期趋势。明确只要文字解释、不要求建图时，只回答解释。
+
+首答先核对用户是否给了单位和来源。明确说“没有单位”时，标题、轴、数据标签、正文和预览均不得补“人”“次”等单位；未给出单位时也不从指标名猜测。可以使用原字段名“报名人数”“访问量”，但不要把其中的字推断为独立的单位声明。未给来源链接时不生成来源 URL。
 
 ## 执行边界
 
@@ -27,10 +33,11 @@ description: 使用图表助手 DSL 创建、编辑、解释、校验和交付�
 1. 先识别输入属于参考图片、原始数据、`ILayerData[]`、`commonOption`、URL 还是已有卡片；涉及外部数据、文档写入或同步时，再执行“外部能力运行前检查”。参考图片先执行第 8 项，再应用其余默认规则。已有飞书卡片先读 [existing-card-replacement.md](references/existing-card-replacement.md)：有授权运行会话时可原位保存；仅有服务端 OpenAPI 时，经用户接受身份变化后采用先建新、验证、再删旧。已接受替换的会话不逐次重复询问。
 2. 用户指定图表类型时只校验，不擅自改型；未指定时再按分析目的选内置模板。
 3. 新建图表或用户要求分析/优化整图时，按 [自动洞察与标注](references/auto-insights.md) 扫描可比较事实、检查表达增量并选择最少必要标注；允许 0 个 marker，用户显式要求标注时按要求执行。局部编辑保持原范围。先验证数据形状和模板能力，再生成 `mappingSpec`、`modelSpec`、marker 或专属字段；本层差异按 [内容、模板与边界检查](references/semantic-marker-anchors.md#30-本层内容模板与边界的生成检查) 配对比较口径和模板，再选择连接边界。
+   显式请求按业务键定位标注、单点样式或联动时，交付前按 [唯一定位与请求完成检查](references/workflow.md#唯一定位与请求完成检查) 核对每个目标及完整请求；不能用保留原始行和结构校验通过替代目标唯一性。
 4. URL 必须判定角色、live/snapshot、手动同步和自动同步资格。
 5. 新建图表默认执行 [MBB 共享设计规范](references/mbb.md) 的全部非配色规则，无需用户额外说明“咨询风”：标题与次级说明、字号、轴标题、网格、标签、图例、信息层级、标注选择、来源和逐图型策略都按适用条件落实。模型可从原生/default、consulting-base、McKinsey、BCG绿、Bain已有配色候选中主动选择，无需出现MBB关键词；无选择依据时继承图表助手/宿主原生色。用户明确样式优先，编辑已有图表时保留未要求修改的样式与布局；不改变数据、图型、映射或来源。
 6. 创建飞书卡片（含替换生成的新卡）统一使用 ISV 版图表助手，不按租户、分享范围或数据源切换版本。写入前按 [安装与可用性检查](references/feishu-doc-card.md#12-安装与可用性检查) 确认应用可用；未安装或未启用时给出正式安装入口，已确认可用时直接继续，纯 DSL/record 生成无需安装。用户明确要求新建文档时，先确定标题、目录和执行身份；否则必须已有目标文档。新建文档时检查 Docx create 能力；向已有文档插卡只需 `block_type:40` children create 和 readback 工具。已有卡片替换按替换协议检查读取、创建、删除及回读能力。缺少当前分支所需能力时只交付可完成阶段的 DSL/record/request plan，不声称已写入或替换完成。获得 `document_id` 后再创建卡片，写后必须 readback 验证。
-7. 默认只交付一种与任务匹配的最终结构，不同时展示“裸 commonOption”和“add-on record”两个重复产物。产物标题使用业务结论或图表主题，例如“季度销售额持续增长”，不得使用“commonOption DSL 配置”“add-on record 包装配置”等实现术语作为用户可见标题。
+7. 默认只交付一种与任务匹配的最终结构，不同时展示“裸 commonOption”和“add-on record”两个重复产物。产物标题使用业务结论或图表主题，例如“季度销售额持续增长”，不得使用“commonOption DSL 配置”“add-on record 包装配置”等实现术语作为用户可见标题。实际／预算、当期／上年同期等基准比较默认按[稳定主题标题](references/business/recipes/baseline-comparison.md#稳定主题标题)写期间、指标与比较主题，当前数值结论交由动态标注；用户显式要求的静态结论标题按该规则保留并说明更新限制。
 8. 输入含参考图片并要求“按图生成/还原/转成卡片”时，先读取 [参考图片还原](references/image-reproduction.md)。先按“用户显式指令 > 图片可见表达 > 已有卡片状态 > 默认规范”确定文字语言、数据与视觉表达；图中画布图形、图表 marker 和纯装饰分别选择对应能力，不能都降级成点标注。
 
 ## 不可违反的契约
@@ -38,7 +45,7 @@ description: 使用图表助手 DSL 创建、编辑、解释、校验和交付�
 - 从原始数据、或已经读取为 standard data 的 Sheet/Base **首次创建内置图表**时，输出 `ICommonChartAssistantData`：`elements[].position + options`。风神可视化查询 URL 不进入 standard data 初始化流程：创建飞书卡片优先交付顶层 `{url, option}` record，本地/画布 commonOption 才使用 chart `sourceType:"aeolus" + sourceInfo.url`。不要让模型在 commonOption 与 ILayerData 之间二选一；`ILayerData[]` 仅用于已有卡片 readback 后的完整编辑/保存态、可信导出 fixture 的原样写回，或用户明确提供 ILayerData 要求继续编辑。该规则与宿主无关，不应写成 iDA 专属分支。
 - 两种元素结构禁止混写：`commonOption.elements[]` 的外层只能使用 `id/type/position/options`，其中 `chartType/data/config/enableDataEdit/enableTypeChange/enableEditorTheme/zIndex` 都属于 `options`；`ILayerData[].elements[]` 才使用 `id/type/rect/attribute`。输出或写卡前必须按所选协议逐元素检查，发现顶层 `chartType/data/config`、或 commonOption element 使用 `attribute/rect` 时停止并修正，不能交给写卡脚本猜测转换。
 - `commonOption` 标准数据使用对象；保存态 `browserData` 中的 `attribute.data.value` 通常是 JSON 字符串。运行时可兼容两者，生成持久化数据时优先遵循保存态。
-- 首次建图卡片统一写 `JSON.stringify({ commonOption, option })`。已有 `ILayerData[]` 的独立写入可使用 `JSON.stringify({ browserData: layerData })`；编辑/替换已有卡片时必须保留完整原 record，仅替换修改后的 browserData，保留原 dataVersion、commonOption、来源和未知字段。新数据默认省略 `dataVersion`，只在确知旧数据原始版本时传真实版本。
+- Skill 首次创建的飞书卡片统一使用“固定卡片尺寸”模式：record 顶层写 `__auto_fit_mode:"auto"`、`__auto_fit_size_mode:"manual"`、`__auto_fit_user_resized:true`、`__auto_fit_pending:false`；按 `commonOption`、URL、独立 `browserData` 来源分别写 `__auto_fit_trigger:"common_option"`、`"url_sync"`、`"browser_data_init"`，避免首次打开时覆盖固定模式，并保证日后能恢复自适应。保留 `option.autoFitContainerByBounds` 的默认值。首次建图卡片写 `JSON.stringify({ commonOption, option, __auto_fit_mode:"auto", __auto_fit_trigger:"common_option", __auto_fit_size_mode:"manual", __auto_fit_user_resized:true, __auto_fit_pending:false })`；其他新卡按来源替换 trigger。用户明确要求自适应时遵从用户要求。编辑/替换已有卡片时必须保留完整原 record，仅替换修改后的 browserData，保留原尺寸模式、dataVersion、commonOption、来源和未知字段。新数据默认省略 `dataVersion`，只在确知旧数据原始版本时传真实版本。
 - 指定单个标签、单个图形或组件子项时，读 [语义元素定位](references/element-editing.md#0-语义-target只补现有-dsl-的定位)：保留原样式 DSL，用 `modelSpec/markStyle` 条目 target 或 `styleMap/dataGroupSpec` 的 `[{target,value}]` 表达业务对象，由实例转换成原生身份。旧 ID 写法仍兼容；不猜内部 key，不扩大编辑范围。
 - `modelSpec` 是组件编辑的主存储；`dataGroupSpec` 保存分组样式，`markStyle` 保存单图元样式。不要新写 deprecated 的 root-level 兼容字段。
 - **普通标题也必须写入 `options.config.modelSpec[]`**，使用 `id:"chart_title", specKey:"title", specIndex:0`。新建标题按 [富文本标题](references/model-spec.md#mbb-富文本标题) 生成，保留用户原文，只补有必要且有事实依据的次级说明；普通字符串兼容结构见 [普通标题最小配置](references/model-spec.md#普通标题最小配置)。`options.config.title` 和 `options.config.label` 不在加载白名单中，会被忽略；普通数值标签写入实际 series 的 `spec.label`，共同配置也可使用 `config.dataGroupSpec.EDITOR_ALL_DATA_GROUP.label`，具体分组再按真实 groupKey 覆盖；不得猜测多系列 ID。交付或写卡前按 [commonOption 交付前校验](references/workflow.md#commonoption-交付前校验) 检查最终 JSON，修正全部错误后再交付。
@@ -48,8 +55,9 @@ description: 使用图表助手 DSL 创建、编辑、解释、校验和交付�
 - **内置模板的位置默认值必须保留。** 用户未明确指定组件位置时，轴 `title` 必须省略 `position/angle/autoRotate`，普通值 `label` 必须省略 `position/offset`，让内置模板决定布局；只要求“显示轴标题/显示数值标签/设置格式”不构成位置要求。只有用户明确要求开始/中间/末端、柱内/柱外/顶部等位置时，才生成相应布局覆盖字段。内置 `bar` 的普通值标签默认是 `inside`。窄例外：用户明确要求柱与数值标签同色，且默认柱内位置会使文字不可读时，按 [同色标签可读性](references/labels.md#同色标签可读性) 使用合法柱外位置，保留显式颜色；用户同时明确柱内位置时先澄清冲突，不擅自改色或移位。
 - **未指定实心样式时，`pie` 一律生成环图。** `chartType` 仍为 `pie`，只在实际 pie series 的 `modelSpec.spec` 显式写 `innerRadius:0.5`；省略 `outerRadius` 以继承宿主主题和布局默认值，不能硬编码为 `1`。用户指定实心饼图、已有卡片已是实心饼图，或参考图片明确无中心镂空时，保留/生成 `innerRadius:0`，不以默认环图覆盖可见表达。
 - **单数据组柱/条默认使用 group 模板。** 当最终只有一个可见数据组/series 时，纵向使用 `barGroup`、横向使用 `horizontalBarGroup`，不要用表示整组堆叠的 `bar`/`horizontalBar`；它们在单组时视觉近似，但 group 模板准确表达“独立柱/条”。简单宽表中可用 `mappingSpec.y` 仅一项预判；存在第二维度/长表时，先物化或核对该维度基数，不能把“一个指标字段”误当成“一个数据组”。多个可见数据组时，只有明确比较并列系列才使用 group，表达构成或可相加总量才使用普通堆叠模板。用户明确指定模板优先；显式要求 `barLink`、`seriesLabel` 或 `totalLabel` 时，由于 group 模板不支持这些能力，选择对应普通模板并说明该能力导致的例外，不能静默丢弃请求。
+- **左右对称比较使用 `butterfly`，且两侧数据必须都是正值。** 人口金字塔、正负面评价、两期对称对比等「同一组类目下左右展开」的诉求，使用内置 `butterfly`，映射写 `x` + `leftY` + `rightY`。**严禁为了让一侧向左生长而把数据改成负数**——向左由模板内部的左侧值轴 `inverse` 实现；构造负值会让标签、Tooltip、总计标签全部泄漏负号，并在堆叠时左右相互抵消，使总计退化成两侧差值。一侧填多个字段即为该侧堆叠层，两侧各自累计并各自显示真实总计；左右共享同一数值域，不得分别设定。类目轴位置用 `butterflyAxisPosition`（`center` 默认 / `both` / `left` / `right`）控制，只影响布局。`butterfly` 标注能力与条形图一致（值线、区域、点、总计差异、层级差异、复合增长均可用），差异标注在**单侧内部**比较（如左侧类目 A 到类目 B），不跨中轴连接左右两根柱子；多 region 下标注必须绑定 `relativeSeriesId` 指明落在哪一侧。`butterfly` 不支持 `barLink` 与 `seriesLabel`；用户要求这两项时说明限制并给出替代，不得静默忽略。两侧量纲不同时不要用 `butterfly`，改用 `dualAxis`。
 - 新建图表需要离散图例且用户未指定位置时，默认放在绘图区下方并居中对齐，使用 `orient:"bottom"`、`position:"middle"` 与 `padding:[16,0,0,0]`，避免与富标题、最高刻度和首条网格线争夺顶部空间。这里的 padding 是组件外沿留白；`item.spaceRow/spaceCol` 只控制图例项彼此距离。保留用户明确位置和已有更大留白，不生成猜测的 `x/y/offset`。已有卡片的图例位置不因默认规范改变；用户明确要求左对齐时使用 `position:"start"`。
-- 内置模板的组件 ID 不能用自然语言猜测。常用直角坐标模板的标题是 `chart_title`，纵向图的左值轴是 `axis-left`（`specIndex:0`），底部类目轴是 `axis-bottom`（`specIndex:1`），离散图例是 `legend-discrete`。series 仍按实际标准数据转换结果确定；最小单维度、单指标 standard `barGroup` 才可使用经当前模板规则验证的 `series-0`，其他情况先物化/readback。
+- 内置模板的组件 ID 不能用自然语言猜测。常用直角坐标模板的标题是 `chart_title`，纵向图的左值轴是 `axis-left`（`specIndex:0`），底部类目轴是 `axis-bottom`（`specIndex:1`），离散图例是 `legend-discrete`。series 仍按实际标准数据转换结果确定；最小单维度、单指标 standard `barGroup`，以及两列（首列维度、次列数值）且映射对应的 standard `pie`，可按已验证规则直接使用 `series-0/specIndex:0`，无需仅为身份执行渲染。其余形状与导入/已有图按 [模型身份](references/model-spec.md) 取得实际身份，不推广此例外。
 - 仅有一个有效数据组/一个可见堆叠层时，普通 `label` 与 `totalLabel` 表达同一个数值：保留普通值标签并显式关闭 `totalLabel`；单系列无需系列身份提示时同时关闭 `seriesLabel`。该去重规则适用于所有支持 total/summary label 的模板。
 - 新建图表存在需要帮助读者定位的关键对象，或用户明确要求强调时，按 [重点着色](references/mbb.md#71-单图形选择性强调) 采用最小的局部视觉强调；已有表达充分时不强制追加改色、框选或文字。必要性统一按 [表达增量检查](references/auto-insights.md#表达增量检查所有图型通用) 判断。默认最多突出 1–2 个 mark，其余作为 context；可按主题和业务语义调整 fill/stroke/opacity/texture，普通重点使用当前宿主/主题的 focus，比较用 compare；[原生语义色](references/mbb.md#7-语义色) 提供 clarity-light 基线，已有宿主和用户配色优先，不把某个颜色或“最大值”写成固定规则。单 datum 重点样式写 `markStyle`；一般从物化/runtime 取得命中身份，只有 element-editing 明确声明的单维度单指标 standard `barGroup` 窄例外可直接生成，不能用数组序号猜目标图形。用户明确要求的多维单点高亮不得静默省略或降为整组着色：保留完整业务键，按 [多维显式高亮](references/element-editing.md#多维显式高亮的两阶段交付) 获取实际身份再应用；缺少物化能力时明确该项尚未完成，不声称完整交付。
 - Scatter/气泡图不因用户提到“相关性”就自动变成四象限图。衡量连续变量关系时使用 scatter/bubble，可在样本和数值域适合时加 `trendLine`；只有分析目标是分群、优先级或行动策略，且 X/Y 都有可解释阈值时，才使用单个 `marker.quadrant`。不得静默用均值/中位数切象限；气泡 size 只编码第三指标，不参与象限归属。当前 target 表达固定业务阈值，不承诺同步后自动重算均值/分位数阈值；真实来源同步资格仍按来源规则判断。
@@ -77,6 +85,8 @@ description: 使用图表助手 DSL 创建、编辑、解释、校验和交付�
 ## 按任务读取 Reference
 
 - 总流程、输入判断和交付检查：读 [workflow.md](references/workflow.md)。
+- 商务汇报、预算／同比／目标差距、实际与预测、已知贡献利润／现金桥、规模与构成：读 [业务入口](references/business/index.md)，基准比较核对角色、分母与期间；实际与预测按[实际与预测配方](references/business/recipes/actual-forecast.md)核对已给定预测、截止点、接点仅计一次与改数边界，不生成预测算法；贡献桥按[已知贡献配方](references/business/recipes/known-driver-bridge.md)核对起点、增量、小计和源终点，采用稳定主题标题与方向色；规模与构成按[规模与结构配方](references/business/recipes/size-and-mix.md)核对独立总量、组成、带宽和改数边界；不生成归因算法或任意公式；统计分布和显式要求改数后持续评价时，读[统计与评价配方](references/business/recipes/statistical-and-evaluation.md)，仅在确认目标开发宿主支持新增 `statistics`／`businessContext` 协议时生成。算法未指定先澄清，方向 unknown 不判好坏、用户覆盖优先，不声称线上或来源同步已支持。
+- 用户明确要求多图共同排序/尺度或图表附表组合时，读[多图与组合配方](references/business/recipes/linked-charts.md)：先核对同一快照、唯一类别、显式单位与换算，关系由开发编辑器命令建立，不能把 `BusinessCompositionV2` 作为 commonOption 字段注入；复制必须包含完整成员和新关系身份。
 - 完整 DSL、公共输入与保存态：读 [dsl.md](references/dsl.md)。
 - 表格、文本、图形、普通线和已有图表连接器：读 [components.md](references/components.md)。
 - 基于图片创建或还原卡片：读 [image-reproduction.md](references/image-reproduction.md)，再按涉及图型和组件读取对应 Reference。
@@ -92,7 +102,7 @@ description: 使用图表助手 DSL 创建、编辑、解释、校验和交付�
 - 新建点说明或修复点标注重叠：读 [point-marker-layout.md](references/point-marker-layout.md)，生成文字偏移与引线配置；保留业务 target 和用户已有位置。
 - 组件编辑字段、优先级和能力矩阵：读 [editing.md](references/editing.md)。
 - 模板总表与选图约束：读 [templates.md](references/templates.md)。
-- 柱、条、折线、面积、散点、双轴、瀑布：读 [template-catalog-cartesian.md](references/template-catalog-cartesian.md)。
+- 柱、条、折线、面积、散点、双轴、瀑布、蝴蝶图：读 [template-catalog-cartesian.md](references/template-catalog-cartesian.md)。
 - 折线分段虚实、实际与预测衔接，以及拆段后系列标签/引线冗余：读 [solid-dashed-line.md](references/solid-dashed-line.md)。
 - 饼、玫瑰、雷达、漏斗、仪表盘、词云、桑基、Mekko、热力图：读 [template-catalog-specialized.md](references/template-catalog-specialized.md)。
 - Treemap、Sunburst、Circle Packing 和导入适配器：读 [template-catalog-hierarchy.md](references/template-catalog-hierarchy.md)。

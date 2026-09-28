@@ -119,6 +119,7 @@
                 "specIndex": 0,
                 "spec": {
                   "orient": "left",
+                  "visible": true,
                   "type": "linear",
                   "zero": true,
                   "title": {

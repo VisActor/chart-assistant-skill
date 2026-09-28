@@ -92,6 +92,7 @@
                 "specKey": "axes",
                 "specIndex": 0,
                 "spec": {
+                  "visible": true,
                   "type": "linear",
                   "title": {
                     "visible": true,
@@ -109,6 +110,7 @@
                 "specKey": "axes",
                 "specIndex": 1,
                 "spec": {
+                  "visible": true,
                   "type": "linear",
                   "title": {
                     "visible": true,

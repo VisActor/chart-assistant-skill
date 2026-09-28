@@ -94,6 +94,8 @@ type VLine = CommonMarker & { name: 'v-line'; x: number | string };
 
 新建业务差异统一使用 [target.from/to](semantic-marker-anchors.md#3-差异from--to)，与 `commonOption` 一次交付；图表助手内部解析定位并生成编辑元数据。标签内容、百分点差、层级比较及年度 CAGR 以该语义文档为准，不要求模型先获取 series ID 或构造 `coordinates`。
 
+`hierarchy-diff-line` 的形态不决定标签口径：本层原值差用 `layerValueDiff`，明确指定的累计边界差用 `value` 并保留 `boundary`，两者都可新建。不能把“连接 A 层 end”自动解释成“A 自身的差”，也不能因示例使用 `value` 就迁移为 `layerValueDiff`。累计值须依据实际层序确认，不能按字段顺序猜测；完整规则见上述语义文档。
+
 三类差异标注继续使用第 2 节的 `line`、`label`、首尾符号等公共样式，展示字段按定位路径区分：
 
 | 字段 | 适用范围与含义 |

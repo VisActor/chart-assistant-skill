@@ -142,6 +142,11 @@ interface ChartAssistantRecord {
     autoFitContainerByBounds?: boolean;       // 默认 true
     displayToolbarDefaultCollapsed?: boolean; // 默认 false
   };
+  __auto_fit_mode?: "auto";
+  __auto_fit_size_mode?: "auto"|"manual";
+  __auto_fit_user_resized?: boolean;
+  __auto_fit_pending?: boolean;
+  __auto_fit_trigger?: "common_option"|"url_sync"|"browser_data_init";
 }
 ```
 
@@ -154,7 +159,12 @@ interface ChartAssistantRecord {
 ```ts
 const recordObject = {
   browserData: layerData,
-  autoSync: true // 只有明确要求且来源有资格时
+  autoSync: true, // 只有明确要求且来源有资格时
+  __auto_fit_mode: "auto",
+  __auto_fit_trigger: "browser_data_init",
+  __auto_fit_size_mode: "manual",
+  __auto_fit_user_resized: true,
+  __auto_fit_pending: false
 };
 
 const child = {
@@ -189,7 +199,12 @@ const recordObject = {
   option: {
     loadContribute: "view",
     displayToolbarDefaultCollapsed: false
-  }
+  },
+  __auto_fit_mode: "auto",
+  __auto_fit_trigger: "common_option",
+  __auto_fit_size_mode: "manual",
+  __auto_fit_user_resized: true,
+  __auto_fit_pending: false
 };
 ```
 
@@ -200,7 +215,12 @@ const recordObject = {
 ```ts
 const recordObject = {
   url: "<supported-chart-assistant-or-aeolus-url>",
-  option: { loadContribute: "view" }
+  option: { loadContribute: "view" },
+  __auto_fit_mode: "auto",
+  __auto_fit_trigger: "url_sync",
+  __auto_fit_size_mode: "manual",
+  __auto_fit_user_resized: true,
+  __auto_fit_pending: false
 };
 ```
 
@@ -225,32 +245,42 @@ const recordObject = {
 
 ```ts
 // 新生成
-JSON.stringify({ browserData: layerData })
+JSON.stringify({
+  browserData: layerData,
+  __auto_fit_mode: "auto",
+  __auto_fit_trigger: "browser_data_init",
+  __auto_fit_size_mode: "manual",
+  __auto_fit_user_resized: true,
+  __auto_fit_pending: false
+})
 
 // 只有确知是旧版保存数据
-JSON.stringify({ browserData: oldLayerData, dataVersion: actualOriginalVersion })
+JSON.stringify({
+  browserData: oldLayerData,
+  dataVersion: actualOriginalVersion,
+  __auto_fit_mode: "auto",
+  __auto_fit_trigger: "browser_data_init",
+  __auto_fit_size_mode: "manual",
+  __auto_fit_user_resized: true,
+  __auto_fit_pending: false
+})
 ```
 
 缺失时运行时使用当前最新版。辅助脚本、教程 live record 里的历史版本只说明当时数据，不是新卡片默认值。
 
 ## 9. 卡片尺寸与运行时字段
 
-新建卡片通常只设置 `option.autoFitContainerByBounds`，不要直接生成以下内部状态：
+Skill 新建卡片默认写入与工具栏“固定卡片尺寸”相同的三个 record 顶层字段：`__auto_fit_size_mode:"manual"`、`__auto_fit_user_resized:true`、`__auto_fit_pending:false`；同时写 `__auto_fit_mode:"auto"` 供日后恢复自适应。`commonOption`、URL、独立 `browserData` 新卡分别写 `__auto_fit_trigger:"common_option"`、`"url_sync"`、`"browser_data_init"`。缺少 trigger 时，前两种来源首次打开会被重置为自适应，独立 `browserData` 来源日后无法恢复自适应。保留卡片内“恢复卡片自适应”的入口；不要用 `option.autoFitContainerByBounds:false` 代替固定模式。用户明确要求自适应时遵从用户要求。其余自动适配状态不要在首次创建时生成：
 
 ```ts
 {
-  __auto_fit_mode?: "auto";
-  __auto_fit_size_mode?: "auto"|"manual";
-  __auto_fit_user_resized?: boolean;
-  __auto_fit_pending?: boolean;
   __auto_fit_applied?: boolean;
-  __auto_fit_trigger?: "common_option"|"browser_data_init";
   __auto_fit_content_size?: {width?:number;height?:number};
   __auto_fit_container_size?: {width?:number;height?:number};
 }
 ```
 
-这些字段由浏览态在物化、测量和用户手动改尺寸时维护。复制 record 时保留用户已固定尺寸的语义；从初始化配置创建新图或明确要求恢复自适应时删除旧 `commonOption.component.size`，让运行时初始化。已有卡片替换保留原 size 与自动适配状态。`record.url` 不进入 browserData 自动尺寸标记路径；URL 首次加载按 URL/commonOption 宿主流程处理。
+这些其余字段由浏览态在物化、测量和用户手动改尺寸时维护。复制 record 时保留原尺寸语义；从初始化配置创建新图时不要复制旧 `commonOption.component.size`，新卡使用自身确定的尺寸。已有卡片替换保留原 size 与尺寸模式。`record.url` 不进入 browserData 自动尺寸标记路径；URL 首次加载按 URL/commonOption 宿主流程处理。写后 readback 核对三个固定模式字段；打开卡片后的实际尺寸与工具栏状态另按真实宿主验证，不以回读代替。
 
 ## 10. 权限
 
@@ -259,6 +289,10 @@ JSON.stringify({ browserData: oldLayerData, dataVersion: actualOriginalVersion }
 典型错误：`1770039` 文件夹不存在、`1770040` 无文件夹权限、403 权限/授权过期、404 document/block 错误、429 或 `99991400` 限流。限流只做有界重试和退避；权限失败不能通过换身份或换 component ID 猜测绕过。
 
 ## 11. 写后 readback
+
+回读响应也可能包含运行时新加的临时凭证，即使创建请求完全不含凭证。先在宿主内存中解析和检查，再将安全投影交给模型、日志或文件；不要把原始 GET 响应重定向到文件、`tee`、调试输出或附件后才脱敏。每一次重试/复查都执行相同过滤，不能只过滤首次回读。工具无法在输出前过滤时，停止该原始读取路径，使用受控的投影工具；不能为了取证先泄露完整响应。
+
+新建配置验证的证据只记录文档/块身份、组件类型、revision、提交配置的比较结果及不含凭证的协议字段。`aeolusToken` 等会话缓存不属于用户提交配置，记录其字段名被排除即可，不记录值或带值的差异。未知新增字段需判断是否为认证/实例状态，不默默忽略后声称完整等价。已有卡片编辑仍按[完整记录与实例投影](existing-card-replacement.md#1-读取与计划)保留未知非认证字段；安全证据投影不是可直接写回的完整编辑记录。
 
 至少使用等价的文档基本信息和单 block 读取能力；原生路径为：
 
@@ -273,7 +307,7 @@ GET /open-apis/docx/v1/documents/:document_id/blocks/:block_id
 2. block API 返回新 block ID、`client_token` 和文档新 revision。
 3. 回读 block 后 `block_type = 40`，component_type_id 为正式 ISV ID `blk_67add0469786801c34ce1a4e`。
 4. record 可解析，所选模式存在且没有冲突。
-5. 完整 record 与提交计划等价：browserData、commonOption 或 url 及未知字段均按所选模式保留；编码变化时比较完整解码语义，不以局部字段相同代替完整校验。
+5. 完整配置 record 与提交计划等价：browserData、commonOption 或 url 及未知非认证字段均按所选模式保留；编码变化时比较完整解码语义，不以局部字段相同代替完整校验。对宿主新增会话缓存仅记录显式排除的字段名，不将凭证落盘；无法确认的新增字段保留为待核对项。
 6. source URL/config/autoSync 及已有 sourceBinding 没丢；未物化的新 commonOption/url 不要求预先产生 sourceBinding，也不能仅凭配置推断同步成功。
 7. theme/color/title/modelSpec/marker/MBB 没丢。
 8. 修改已有卡片时，用户要求的目标变更正确，数据、映射、来源、其他标注、尺寸及其他未授权修改的字段保持；实例投影仅限替换协议明确允许且已记录的字段。

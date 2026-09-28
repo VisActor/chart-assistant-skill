@@ -1,5 +1,9 @@
 # Examples 使用索引
 
+## 预算与实际
+
+[季度预算比较](../examples/business/baseline-comparison/common-option.json)：960×540 的完整 commonOption，Q1 预算 100、实际 120，动态本层差额／差异率为 +20／+20%；合计预算 400、实际 420，合计率 +5%。实际深色、预算浅灰通过语义分组样式定位，不猜 series ID。标题保持稳定主题，不写死合计结论。适用输入、零负基准、百分点、纹理和编辑边界见 [基准比较配方](business/recipes/baseline-comparison.md)。
+
 ## 单项与分组语义定位
 
 [业务 target 样例](../examples/semantic-element-targets.json) 包含单柱与标签、完整指标组、轴标签与网格线的 Prompt、基础 commonOption 和 patch。样式沿旧字段；首次加载将 patch 合并到 options.config，已有实例只提交 patch。运行时补齐内部身份后再保存，不能把基础图的出现当成单项编辑已完成。
@@ -10,9 +14,17 @@
 - [多对象虚实折线](../examples/solid-dashed-line-multi-object.json)：两对象分别拆实际/预测列；先创建数据，再按实际 groupKey 和 model identity 合并样式，并按实际图例项索引设置连续/分段符号。不是可原样写卡的完整 record。
 - 条形图指标/总量/差距排序及月份季度跨年示例见 [排序决策与执行](data-and-formatting.md#5-排序规则)；是否可以重排先按数据来源判断。
 
+## 蝴蝶图左右对称比较
+
+[人口结构蝴蝶图](../examples/butterfly-population-pyramid.json)：760×460 的 standard `butterfly` 完整 commonOption，`leftY`/`rightY` 分别映射女性与男性。**两侧数据都是正值**，向左生长由模板内部的轴 `inverse` 实现；左右值轴共享同一数值域，两侧量级可直接比较。`butterflyAxisPosition:"center"` 把类目轴放在两区中间，改成 `both`/`left`/`right` 只影响布局，不动数据与映射。
+
+示例同时给 `series-left` 与 `series-right` 配置柱背景；这两个 series 分属不同 region，图表级样式不能只写其中一个。
+
+一侧填多个字段即为该侧堆叠层，两侧各自累计、互不抵消。替换业务数据时保持两侧同量纲，否则共享数值域会让较小一侧几乎不可见。
+
 ## 本层标签内容示例
 
-[本层占比差](../examples/semantic-layer-label-content.json)：百分比堆叠柱 B 原值 20→60、占比 20%→30%，显式选择 `layerShareDiff`，预期 +10 pp。切换 `layerValueDiff` 为 +40、`layerGrowthRate` 为 +200%、`layerShareGrowthRate` 为 +50%。下方旧 record 的边界格式不自动改变。
+[本层占比差](../examples/semantic-layer-label-content.json)：百分比堆叠柱 B 原值 20→60、占比 20%→30%，显式选择 `layerShareDiff`，预期 +10 pp。切换 `layerValueDiff` 为 +40、`layerGrowthRate` 为 +200%、`layerShareGrowthRate` 为 +50%。下方累计边界 record 使用另一计算口径，不因新建而改成本层格式。
 
 [Mekko 本层占比差](../examples/semantic-mekko-layer-share.json)：使用 `mekkoPercent`，Labor 的 BU 1→BU 2 占比差为 -1.06 pp；该层实际位于最上层，使用 `boundary:start` 避免两端 end 均为 100%。改用 `layerShareGrowthRate` 时预期 -2.44%。
 
@@ -36,7 +48,7 @@
 | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | [基础标注](../examples/semantic-basic-annotations.json)            | 参考线、包裹 Q2–Q3 柱子的区域、Q4 点说明；区域高度是固定 0–120，不承诺随柱高自动求最大值         |
 | [年度复合增长](../examples/semantic-annual-growth.json)            | 年份数据声明、动态 CAGR，2020→2024 为四年、10% |
-| [总计与层级差异](../examples/semantic-total-versus-hierarchy.json) | 整栈总量与 A 层结束边界；当前 A 为上层，两者都为 +90，而非 A 自身差 +50 |
+| [总计与层级差异](../examples/semantic-total-versus-hierarchy.json) | 整栈总量与 A 层结束边界均使用动态 `value`；本例已确认 A 为上层，两者都为 +90，而非 A 自身差 +50。不要将该层序推广为字段顺序规则；只有改为比较 A 自身时才选 `layerValueDiff` |
 | [单条分区线](../examples/semantic-partition-threshold.json)        | standard scatter 的增长率 0.1 阈值，不生成四象限                                                 |
 | [业务四象限](../examples/semantic-business-quadrant.json)          | standard scatter 的 0.1/0.2 两阈值，highHigh 浅绿色，不生成 polygon key                          |
 

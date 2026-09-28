@@ -71,6 +71,7 @@
                 "specKey": "axes",
                 "specIndex": 0,
                 "spec": {
+                  "visible": true,
                   "min": -16,
                   "max": 0,
                   "inverse": false,
@@ -85,6 +86,7 @@
                 "specKey": "axes",
                 "specIndex": 1,
                 "spec": {
+                  "visible": true,
                   "min": 0,
                   "max": 1,
                   "inverse": false,
