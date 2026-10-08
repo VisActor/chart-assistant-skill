@@ -1,4 +1,4 @@
 interface:
   display_name: "图表助手"
-  short_description: "创建、编辑、校验和交付图表助手图表与飞书文档卡片"
-  default_prompt: "使用 $chart-assistant 处理图表助手 DSL、内置或风神图表、URL 数据源同步、MBB 制图规范，以及新建飞书文档或向已有文档插入图表助手卡片。"
+  short_description: "飞书文档报告的可编辑图表：30+ 内置图型与商务图表，图表类型、标注和编辑能力对齐 ThinkCell，MBB 咨询风规范与差异标注，支持数据源同步"
+  default_prompt: "使用 $chart-assistant 为飞书文档报告创建图表助手卡片：内置与商务图表、差异标注、MBB 制图规范、URL 数据源同步，以及新建飞书文档或向已有文档插入/替换图表助手卡片。"
