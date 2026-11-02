@@ -10,7 +10,7 @@
 npx skills add VisActor/skills --skill chart-assistant
 ```
 
-`vchart-editor` 的 `packages/chart-assistant/` 始终是唯一源码，开发和修复仍在该项目完成；`VisActor/skills` 只接收固定源码提交导出的分发副本，不独立修改产品规则。后续统一仓库通过 release PR 发布正式 Release，下游市场再按内容变化同步更新；GitHub Release 和 AgentBuddy 上架分别核验。
+`vchart-editor` 的 `packages/chart-assistant/` 始终是唯一源码，开发和修复仍在该项目完成；`VisActor/skills` 只接收固定源码提交导出的分发副本，不独立修改产品规则。GitHub、AgentBuddy、Aily 是平行分发渠道，由图表助手自己的发布流程分别更新；统一仓库的 release PR 仅处理 GitHub 发版，不触发或接管市场更新。AgentBuddy 保留原条目和地址，Aily 保留原技能及审核流程。
 
 本仓库保留现有 Skill 文件、历史及旧安装入口以兼容已有用户。迁移生效后，不再向本仓库同步新版本；通过旧入口安装的副本不会自动切换来源。更新时请使用上方新入口，并核对安装来源。
 
