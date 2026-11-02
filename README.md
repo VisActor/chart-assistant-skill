@@ -2,7 +2,19 @@
 
 将图表助手安装到自己的 AI Agent，使用自然语言生成、编辑和校验图表助手 DSL；具备飞书工具和授权时，还可将图表卡片交付到飞书文档。
 
-## 安装
+## 公开分发迁移
+
+图表助手的公开分发将迁到 [VisActor/skills](https://github.com/VisActor/skills)，目录为 `skills/chart-assistant/`。请在该仓库 `main` 包含此目录、正式 Release 提供 `chart-assistant.zip` 后，再改用新入口：
+
+```bash
+npx skills add VisActor/skills --skill chart-assistant
+```
+
+`vchart-editor` 的 `packages/chart-assistant/` 始终是唯一源码，开发和修复仍在该项目完成；`VisActor/skills` 只接收固定源码提交导出的分发副本，不独立修改产品规则。后续统一仓库通过 release PR 发布正式 Release，域内流水线再按内容变化自动同步 AgentBuddy；GitHub Release 和 AgentBuddy 上架分别核验。
+
+本仓库保留现有 Skill 文件、历史及旧安装入口以兼容已有用户。迁移生效后，不再向本仓库同步新版本；通过旧入口安装的副本不会自动切换来源。更新时请使用上方新入口，并核对安装来源。
+
+## 兼容安装入口
 
 在终端运行（需要 Node.js/npm）：
 
