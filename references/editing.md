@@ -14,10 +14,17 @@
 | 柱条连接线 | `attribute.barLink` |
 | 堆叠策略 | `attribute.stackType` |
 | 双轴同步域 | `attribute.syncAxisDomain` |
+| 组件位置/尺寸（图例、标题、region 等） | `attribute.layout[]` 条目（按 id 或 specKey+specIndex 命中已有条目，不新增） |
+
+仅改 `modelSpec` 的 `orient/position` 不会移动已被手工布局钉住的组件（已保存的 layout 条目优先）；移动组件或改尺寸必须同写 layout 条目，`offset` 是画布绝对像素值：
+
+```json
+"layout": [{"id": "legend-discrete", "layout": {"y": {"offset": 258}}}]
+```
 
 历史 root-level `title/label/seriesLabel/totalLabel/tooltip/crosshair` 只用于兼容读取；新增编辑归并到 `modelSpec`。
 
-`dataGroupSpec[group]` 可同时包含 group 级 `bar/line/point/...` mark 与 `label/outsideLabel/transformLabel/...`；group key 必须来自运行时 `dataGroupMap`。完整定义见 [element-editing.md](element-editing.md)。
+`dataGroupSpec[group]` 可同时包含 group 级 `bar/line/point/...` mark 与 `label/outsideLabel/transformLabel/...`；值形态如 `{"产品B实际": {"bar": {"style": {"fill": "#00B42A"}}}}`。group key 必须来自运行时 `dataGroupMap`。完整定义见 [element-editing.md](element-editing.md)。
 
 ## 2. 五种“标签/线”不可混淆
 

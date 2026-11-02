@@ -147,6 +147,27 @@
         }
       },
       "precondition": "两指标均为 0–1 尺度，阈值来自业务目标 10% 与盈利底线 20%；生成单个 marker.quadrant 对象，不生成 polygon key"
+    },
+    {
+      "type": "hierarchy-diff-line",
+      "target": {
+        "from": {
+          "match": {
+            "季度": "Q1",
+            "产品": "产品A"
+          },
+          "metric": "实际"
+        },
+        "to": {
+          "match": {
+            "季度": "Q2",
+            "产品": "产品A"
+          },
+          "metric": "实际"
+        }
+      },
+      "content": "layerGrowthRate",
+      "precondition": "分组柱图同系列两季度比较：match 写完整业务键（维度+分组值）并指定 metric；不使用 series ID、显示文本或数组序号，任一端不存在时澄清，不省略分组值把分组柱扩大成整组总量"
     }
   ]
 }

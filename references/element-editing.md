@@ -22,6 +22,14 @@
 
 `target` 不包含 `chartId/kind/role/scope`，图表与目标种类由外层位置确定。数据目标使用 `selector:{原始字段:原始值}` 和可选 `measure:"原始指标列名"`；父 series 可只用 measure，子 styleMap 继承父系列。不得使用 Marker 的 `match/metric` 替代 `selector/measure`。
 
+原生 series id/specIndex 不等于业务指标编号。`models` 中列出某个 id 只说明组件存在；没有业务绑定时，不能由名称或数组顺序推断归属，父系列应使用 `target.measure` 让 Core 解析。例如类别 B 的 24 来自指标“系列 1”，不代表它属于 `series-1`；普通标签字号与字重修改应为：
+
+```json
+{"modelSpec":[{"specKey":"series","target":{"measure":"系列 1"},"spec":{"label":{"styleMap":[{"target":{"selector":{"类别":"类别 B"}},"value":{"style":{"fontSize":18,"fontWeight":"bold"}}}]}}}]}
+```
+
+单标签样式请求不附加整个系列 `label.visible:true`。语义编译定位当前已渲染标签；不要把同一 patch 中的整体显隐修改当成已经渲染的事实。
+
 例如放入 `options.config`（已有图则作为对应 chart 的输入 patch）：
 
 ```json
@@ -58,6 +66,20 @@
 首次加载时宿主隔离语义项，待实例就绪编译；已有实例可调用 `resolveSemanticTargets(patch)`，仅当 `success:true` 才把返回的原生 patch 交给原有更新方法。成功保存只保留原生 ID/map；不持续保存 target 或随数据更新自动重放。缺少此入口的宿主仍可交付语义配置并说明运行时尚未执行，不能假定旧宿主认识数组。
 
 完整生成样例见 [semantic-element-targets.json](../examples/semantic-element-targets.json)。这些是现有编辑字段的输入扩展，不改变 Marker 或通用连接线的 target/更新行为。
+
+### 0.1 组件归属与单对象路由
+
+element 编辑任务常只加载本页，以下速查内联自 [model-spec.md](model-spec.md)，完整定义以该页为准：
+
+- `modelSpec` 条目必须显式写 `specKey`，只取组件集合键：`series`、`axes`、`legends`、`title`、`tooltip`、`crosshair`、`region`。不存在 `"bar"`、`"label"`、`"axis"` 等猜测键；省略 `specKey` 的条目同样非法。
+- 全部标签类字段归属 `specKey:"series"` 条目：`label`（普通数值标签）、`seriesLabel`、`totalLabel`、`transformLabel`、`outerLabel`、`outsideLabel`/`insiderLabel`、`mekkoLabel`；轴标签在 `axes` 条目的 `spec.label`，图例项在 `legends` 条目的 `spec.item`。
+- `crosshair` 是独立组件（模板 ID `crosshair-0`），不是轴的子字段，不要写进 `axes` 条目的 `spec`。
+
+单元素/单数据点样式：
+
+- 单个图形写 `markStyle` 语义条目 `{markName,target,style}`；`markName` **必填**（柱 `"bar"`、点 `"point"`、普通值标签 `"text"` 等）。缺 `markName` 的条目无法确定目标图元，会被核心按不支持的模式拒绝，不能靠补 `id` 或改用其他字段绕过。
+- 单对象请求不得用 `dataGroupSpec` 整组着色降格满足；整组请求也不枚举 `markStyle`。
+- `selector/measure` 在当前数据中匹配不到唯一对象时澄清并报告诊断，不放宽条件、不省略分组值把目标扩大到整组或相邻对象。
 
 ## 1. Axis label
 
@@ -138,6 +160,8 @@ type LabelItem = {
 
 这些规则依赖模板转换后的真实 series 字段；值本身含 `_` 时还可能产生碰撞。因此 LLM 不应从原始数据独立复刻 key。语义输入由宿主调用现有 `getLabelStyleMapIds` 链路生成 key；已有身份仍可直接保存首选数据 key。
 
+对象形式 map 的 key 在计划编译（prepare）时会与当前运行时数据身份核验：`label/outsideLabel/insiderLabel` 的 styleMap 含不匹配当前数据的 key 时整个计划被拒绝并返回诊断，提示改用 `[{target,value}]` 数组形式——该 key 若落盘，本会被图表重建时的过期条目清理静默移除（保存态变空、渲染无效果、回执却成功）。新计划的索引 key 必须指向实际存在且属于目标系列的标签，编译后转换为原生身份；存量读取仍沿既有迁移链路处理。服务端生成阶段只允许对象形式复用输入中同系列已保存的 key；新增定位一律使用 `[{target,value}]` 数组，错误类别名 key 会进入有限修正轮。
+
 `displayType: all|min|max|minMax|firstLast` 是整体选择策略；它比写大量 `visible:false` 更稳定。单点 `forceVisible` 只用于防重叠后仍必须出现的关键标签。
 
 ## 6. Series label
@@ -155,6 +179,16 @@ type LabelItem = {
 ## 7. Total label
 
 路径：`modelSpec[series].spec.totalLabel.styleMap[key]`。
+
+先区分普通分段值与堆叠合计值。例如类别 C 的三段为 40、28、35，用户指定的标签 103 是合计，应写 `totalLabel`，不能写普通 `label`。显示数值只用于结合当前数据判断标签种类，不作为业务身份，也不要在工具转述中丢掉用户给出的数值。
+
+语义输入必须给父 series 一个当前输入中可验证的身份：使用真实指标 `measure`，或复用已有 `id/specIndex`；不能写 `target:{}`，也不能将“当前唯一图表”视为“唯一系列”。子 `styleMap` 用分类 selector 定位合计；运行时会解析实际承载合计标签的系列，不必猜测最后一个系列或内部 key。例如仅将类别 C 的合计 103 设红：
+
+```json
+{"modelSpec":[{"specKey":"series","target":{"measure":"系列 1"},"spec":{"totalLabel":{"styleMap":[{"target":{"selector":{"类别":"类别 C"}},"value":{"style":{"fill":"#E53935"}}}]}}}]}
+```
+
+其中 `系列 1`、`类别`、`类别 C` 必须来自当前输入；不能照抄示例中的名称。若现有输入不能区分普通标签与合计标签，先澄清，不以整体改色或另一类标签代替。
 
 key 优先级：
 

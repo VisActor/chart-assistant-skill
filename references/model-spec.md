@@ -22,6 +22,24 @@ interface IModelSpec extends ModelIdentity {
 }
 ```
 
+### specKey 速查与字段归属
+
+每个 `modelSpec` 条目都必须显式写 `specKey`，它只取运行时组件的集合键，不是系列类型、字段名或自然语言名。不存在 `specKey:"bar"`、`"label"`、`"axis"`、`"xAxis"` 之类的猜测键；只写 `id` 而省略 `specKey` 的条目同样非法。
+
+| specKey | 该条目 `spec` 承载的内容 | 内置模板常见身份 |
+| --- | --- | --- |
+| `series` | 系列本体样式与**全部标签类字段**：`label`（普通数值标签）、`seriesLabel`、`totalLabel`、`transformLabel`、`outerLabel`、`outsideLabel`/`insiderLabel`、`mekkoLabel` | `series-${runtimeDataId}`，或受支持的业务 target |
+| `axes` | 轴标题、刻度、网格、轴线、截断；**不含十字准线** | `axis-left`/`axis-bottom` 等 |
+| `legends` | 图例整体与单个图例项 | `legend-discrete`/`legend-color` |
+| `title` | 图表标题 | `chart_title` |
+| `tooltip` | 悬停提示 | 模板实际身份 |
+| `crosshair` | 十字准线 | `crosshair-0` |
+| `region` | 绘图区 | `region-0` |
+
+- 普通数值标签没有独立的 label 组件键：`label`、`seriesLabel`、`totalLabel`、`transformLabel`、`outerLabel` 全部写在对应 `specKey:"series"` 条目的 `spec` 中；轴标签在 `axes` 条目的 `spec.label`，图例项在 `legends` 条目的 `spec.item`。
+- `crosshair` 是独立组件条目，不是轴的子字段。开启十字准线写 `{id:"crosshair-0",specKey:"crosshair",specIndex:0,spec:{...}}`，不要把 crosshair 配置塞进任一 `axes` 条目的 `spec`，也不要为它发明 `tooltip` 条目的身份。
+- `player`/`dataZoom`/`scrollBar` 也是合法集合键但没有结构化编辑类型，按第 4.1 节处理。
+
 确定规则：
 
 1. `id` 取目标运行时 model 的 `userId`，通常来自模板/VChart spec 的组件 `id`。
@@ -30,7 +48,9 @@ interface IModelSpec extends ModelIdentity {
 4. 有 `id` 时，默认匹配逻辑严格比较 `id`；ID 不同不会自动按索引命中。只有调用方显式使用“忽略 ID”兼容模式，才回退到 `specKey + specIndex`。
 5. `id` 与 `specKey/specIndex` 必须指向同一组件。布局数据使用同一身份；错配可能导致样式不生效或布局关联到另一组件。
 
-常见模板 ID 不是自然语言名称。当前内置模板的确定性公共 ID 包括：`chart_title`、`legend-discrete`、`legend-color`、`region-0`、`axis-left`、`axis-right`、`axis-bottom`、`axis-top`、`axis-angle`、`axis-radius`、`crosshair-0`。纵向直角坐标模板默认 axes 顺序为 `axis-left/specIndex:0`、`axis-bottom/specIndex:1`；横向模板仍是 `axis-left/specIndex:0`、`axis-bottom/specIndex:1`，但两轴的 band/linear 角色互换。不要写 `title`、`x_axis`、`y_axis`、`legend`、`series` 之类猜测 ID。
+常见模板 ID 不是自然语言名称，也不保证是当前屏幕上的方位。当前内置模板的确定性公共 ID 包括：`chart_title`、`legend-discrete`、`legend-color`、`region-0`、`axis-left`、`axis-right`、`axis-bottom`、`axis-top`、`axis-angle`、`axis-radius`、`crosshair-0`。纵向直角坐标模板默认 axes 顺序为 `axis-left/specIndex:0`、`axis-bottom/specIndex:1`；横条模板仍是这两个身份，但 band/linear 角色与纵向柱图互换。不要写 `title`、`x_axis`、`y_axis`、`legend`、`series` 之类猜测 ID。
+
+**折线/面积图的 `transposed:true` 不等于切换为横条模板。** 该属性旋转轴的实际 `orient`，保留轴身份及 band/linear 角色：默认数值轴仍是 `axis-left/specIndex:0`，转置后出现在底部；分类轴仍是 `axis-bottom/specIndex:1`，转置后出现在左侧。同一完整计划同时设置 `transposed:true` 与“数值轴标题”时，应定位当前真实 linear 轴，不能因它最终出现在底部而把标题写入名字含 bottom 的分类轴。优先依据上下文中的真实组件身份、轴类型与字段归属；已有自定义轴不能套此默认索引。
 
 需要显示轴或轴标题时，父轴的 `spec.visible:true` 与 `title.visible:true` 分别设置；子项可见不会覆盖父轴隐藏。当前横条模板默认隐藏 `axis-bottom` 值轴：需要数值/占比轴时，在 `axis-bottom/specIndex:1` 上显式写 `visible:true`，再配置标题和刻度；左侧仍为分类轴。已有图只改标签格式或局部样式时，保留用户原轴可见性。
 
@@ -116,8 +136,10 @@ type AxisModelSpec = ModelIdentity & { specKey:"axes"; spec:{
 `title.position/angle/autoRotate` 都是布局覆盖，不是展示轴标题的必填字段。首次创建内置模板时，如果用户只要求显示左轴标题，显式开启父轴 `visible:true`，标题只写 `title.visible/text` 及必要样式，省略这些布局字段，让模板和 VChart 决定默认位置。用户明确要求轴标题位于开始、中间或末端时，才生成对应的 `position`。
 
 ```json
-{"visible":true,"title":{"visible":true,"text":"销售额"}}
+{"visible":true,"title":{"visible":true,"text":"数值"}}
 ```
+
+此处“数值”仅演示标题配置结构，不能把示例文案当成实际指标名。新建时根据实际轴绑定字段及 `axisTitleDefaults`（若提供）选择标题；用户明确的标题优先，已有作者标题保留。
 
 ## 4. Title、Legend、Region、Tooltip、Crosshair
 
@@ -173,6 +195,8 @@ Legend 的复合对象随离散/连续图例不同，只写已知意图所需字
   ]
 }
 ```
+
+title patch 建议始终显式携带 `visible:true`：仅写 `text` 运行时也会按显示处理（占位标题 `_initialize_` 标记由运行时归一化清除），显式声明可避免与占位标题语义混淆。
 
 错误反例：`options.config = {"title":{"visible":true,"text":"各年份地区指标构成"},"label":{"visible":true}}`。`config.title/config.label` 不在 commonOption 加载白名单中，会被忽略；增加 `visible` 或 `_initialize_` 无法修复错误层级。保存态历史 root-level 兼容字段也不代表 commonOption 的 config 接受同名字段。
 
@@ -241,6 +265,14 @@ type SeriesModelSpec = ModelIdentity & {specKey:"series";spec:{
   zIndex?:number;type?:"area"|"bar"|"line";_editor_axis_orient?:"left"|"right";
 }&SeriesStyle};
 ```
+
+单个数值标签新增样式使用语义数组，不能把类别名当作 `styleMap` key。例如系列 3 的类别 B 标签变红：
+
+```json
+{"modelSpec":[{"specKey":"series","target":{"measure":"系列 3"},"spec":{"label":{"styleMap":[{"target":{"selector":{"类别":"类别 B"}},"value":{"style":{"fill":"red"}}}]}}}]}
+```
+
+对象形式只复用当前同系列已保存的实际 key。新增业务定位由运行时解析；生成阶段遇到未声明的对象 key 会进入修正轮。
 
 Label 的完整 discriminated union、position 和 format content 见 [labels.md](labels.md)。`seriesLabel.label.styleMap` 的稳定保存键与图形 ID 不等价，统一按 [Series label 身份规则](labels.md#3-series-label) 复用实际拾取/readback 的 key，不要求 LLM 生成内部身份；totalLabel 优先使用数据 key；一般开关不要猜这些键。
 

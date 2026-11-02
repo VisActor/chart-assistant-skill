@@ -4,6 +4,8 @@
 
 | 输入                         | 默认处理                                                              | 交付                                    |
 | ---------------------------- | --------------------------------------------------------------------- | --------------------------------------- |
+| 用户要求图片 / PNG | 生成并校验 DSL → 托管渲染，见 [图片交付](image-delivery.md) | 真实可下载 PNG，默认透明背景 |
+| 飞书文档中的静态图片 | 生成 PNG → 上传/插入普通图片块 → 回读，见 [飞书图片交付](feishu-image-delivery.md) | 文档链接 + 图片块验证结果 |
 | 原始数据                     | LLM 识别字段、选模板、生成映射和配置                                  | 首次建图统一为可初始化的 commonOption   |
 | 用户指定模板                 | 不重新推荐，只校验数据和编辑能力                                      | 合法 DSL 或明确拒绝原因                 |
 | 已有飞书卡片 | 读完整当前 record → 最小编辑 → 按宿主能力原位保存或已授权替换 | 原位结果，或 old/new block ID + 分阶段验证 |
@@ -15,7 +17,7 @@
 | 风神可视化查询 URL           | 交给插件解析并同步既有图表，不拉 rows 重新制图                        | Aeolus URL record/DSL                   |
 | 参考图片 / 截图              | 逐项提取可见文本、图型组合、配色、图例和画布元素，再选择 DSL          | 经实际图面比对的 card，或待视觉核验配置 |
 | Common/share URL             | 判定返回类型和同步边界                                                | URL record 或物化 DSL                   |
-| 飞书目标文档                 | 先完成 DSL，再写卡片                                                  | block ID + readback 结果                |
+| 飞书目标文档（可编辑卡片）   | 先完成 DSL，再写卡片                                                  | block ID + readback 结果                |
 | 新建飞书文档并放图表         | 先完成 DSL，再以同一身份创建 Docx 和卡片                              | document URL + block ID + readback 结果 |
 
 原始/standard data 首次建内置图使用 commonOption 让编辑器初始化，不手工编造完整 browserData。风神可视化查询 URL 是例外：飞书卡片可直接使用顶层 URL record，本地画布可使用 `sourceType:"aeolus"` 的 commonOption chart，两者都由插件物化 Aeolus browserData，而不是由 LLM 构建 standard data。已有编辑态 readback、模板 fixture 或真实导出时才直接创建/更新 browserData；这是一条协议生命周期规则，不按 iDA 等宿主分别定义。
@@ -168,3 +170,8 @@ LLM 应：
 ## 跨图表连接器
 
 首次创建按 [语义连接器](semantic-chart-connectors.md) 一次生成两图及 `options.target.from/to`，使用真实业务字段与指标，省略 `data/points` 和连接器布局矩形。图表仍显式布局；静态校验检查 chartId 引用，运行时检查实际目标唯一性及锚点能力。写后检查连接器解析错误与保存态数量，不能仅凭图表 ready 声称连线完成。
+
+
+## 标注生成与历史读取
+
+新调用默认 `markerFormat: "editor-marker-authoring/v1"`、`markerCapabilityVersion: "core-semantic-v1"`。推荐、增强和智能编辑只生成 Core 作者记录，预览、保存和重开消费相同 target；不请求旧 `generatedMarkers.spec` 或在模型侧计算运行时坐标。commonOption 仍是直接 DSL 的完整载体，协议字段属于 API 请求而非 marker 记录。历史原生/坐标保存态可继续读取和维护；需要原生 spec 导出时使用 Core 当前作者态的实际导出，不恢复旧生成器。

@@ -11,6 +11,24 @@
 
 业务 Agent 不需要 Marker Compiler 或编辑器源码；图表助手内部解析 `target`，生成坐标与编辑元数据。不要生成旧草案的 `anchors`、`dimensions/groups` 或通用 `partitions[]/where`。
 
+## 新生成调用契约
+
+API/Agent 默认使用 `markerFormat: "editor-marker-authoring/v1"`、`markerCapabilityVersion: "core-semantic-v1"`，生成结果是 `markerCandidates: [{ collection, candidateId, record }]`；record 直接采用本页的 target 与样式。服务端分配候选/记录身份并校验，Core 负责解析数据、坐标和动态数值。不要返回 `semanticTarget` 中间草案再配 `generatedMarkers.spec`，也不要先生成原生 markLine/markPoint 几何再反提作者。直接交付 commonOption 时仍把记录放在 `options.config.marker`，不把 API 协议字段塞进 marker 记录。
+
+```json
+{
+  "markerFormat": "editor-marker-authoring/v1",
+  "markerCapabilityVersion": "core-semantic-v1",
+  "config": { "annotations": { "sourceMode": "userOnly", "authorItems": [{
+    "collection": "markPoint",
+    "record": { "name": "mark-point", "target": { "match": { "年份": 2024 }, "metric": "A" },
+      "itemContent": { "text": { "visible": true, "formatConfig": { "content": "value", "prefix": "当前值：" } } } }
+  }] } }
+}
+```
+
+以上是增强请求的协议与 annotations 配置片段，仍须按实际工具补完整 input；不是单独可调用的请求。显式 S1/S2 旧能力各自限界，但也只走作者记录新路线。point/reference/area 的 source、系列及轴由 Core 实际映射证明，不统一假设为标准柱图；无法定位时保留诊断，不用旧坐标或第一系列兜底。total/growth/hierarchy 仍按下文真实堆叠、指标、边界与年度约束处理，不因默认能力合并而放宽。
+
 ## 1. 按用户目的选结构
 
 | 用户想表达                   | marker 内的位置                   | target 怎么写                       |
@@ -52,6 +70,12 @@ type DataTarget = {
 ## 3. 差异：from / to
 
 保留 `growth-line`、`total-diff-line`、`hierarchy-diff-line`。from/to 是有序业务起终点，不随排序交换。
+
+from/to 的端点契约：
+
+- 每端是一个业务对象，用 `match` 写完整业务键：全部维度路径、分组值，以及必要的 `metric`；不使用运行时 series ID、图例显示文本、内部 `_editor_*` 字段或数组序号。
+- `match/metric` 只属于 marker target 通道；单元素样式 `markStyle`/`styleMap` 的 `selector/measure` 是另一套定位（见 [element-editing.md](element-editing.md#0-语义-target只补现有-dsl-的定位)），两套字段不互换。
+- 任一端在完整业务集合中不存在或匹配不唯一时按 [解析状态](#8-解析状态与同步) 的 error 语义澄清，不换绑近似对象，也不省略分组值把分组对象扩大成整组总量。
 
 ```json
 {
@@ -277,6 +301,19 @@ type AreaTarget = { ranges: [FieldRange] | [FieldRange, FieldRange] };
 
 `mark-point` 使用 `target:DataTarget`，文本、引导线和目标符号保留原有 `itemContent/itemLine/targetSymbol`。
 
+需要数值随数据更新时使用 `itemContent.text.formatConfig: { "content": "value", "prefix": "当前值：" }`，省略 `itemContent.text.text` 和 `label.text`；省略 `target.aggregate` 时，值绑定 target 的真实 metric 原始值，不使用堆叠累计值，也不重新选择全局极值。若说明生成时选中的最大/最小点，前缀写“生成时最大值点，当前值为”等，不能在排序变化后仍断言它是当前全局极值。普通固定说明继续使用显式 text，历史静态文字不自动改写。
+
+柱图总值点显式使用 `target.aggregate: "sum"`，定位已核验整栈的总值端点，动态 `content: "value"` 显示该整栈总值。`match` 指定业务分组，`metric` 选择所属整栈；省略 metric 时必须能唯一确定整栈，不能选择第一个系列或自行猜测汇总范围。该能力仅限可核验的柱图，不扩展到折线、面积、散点或热力图。例如：
+
+```json
+{
+  "id": "march-total",
+  "name": "mark-point",
+  "target": { "match": { "月份": "3月" }, "metric": "销售额", "aggregate": "sum" },
+  "itemContent": { "type": "text", "text": { "formatConfig": { "content": "value", "prefix": "当前总值：" } } }
+}
+```
+
 ```json
 {
   "id": "march-event",
@@ -287,7 +324,7 @@ type AreaTarget = { ranges: [FieldRange] | [FieldRange, FieldRange] };
 }
 ```
 
-线/散点定位数据点，柱定位模板支持的图形端点；多图元或无法唯一映射时报告不支持。不新增中心/上下边等方位枚举，文本偏移仍用现有字段；不因此扩大各模板的 mark-point 能力。
+线/散点定位数据点，柱的成员原始值点定位实际柱段中心，显式 `aggregate: "sum"` 定位总值端点；多图元或无法唯一映射时报告不支持。不新增中心/上下边等方位枚举，文本偏移仍用现有字段；不因此扩大各模板的 mark-point 能力。
 
 上面的偏移只是候选。新建点说明按 [点标注配置](point-marker-layout.md) 保留业务 target，检查偏移和引线字段；有用户截图或明确位置反馈时再针对性调整，不默认循环渲染或承诺自动避让。
 

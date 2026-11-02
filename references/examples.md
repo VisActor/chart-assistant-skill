@@ -6,7 +6,7 @@
 
 ## 单项与分组语义定位
 
-[业务 target 样例](../examples/semantic-element-targets.json) 包含单柱与标签、完整指标组、轴标签与网格线的 Prompt、基础 commonOption 和 patch。样式沿旧字段；首次加载将 patch 合并到 options.config，已有实例只提交 patch。运行时补齐内部身份后再保存，不能把基础图的出现当成单项编辑已完成。
+[业务 target 样例](../examples/semantic-element-targets.json) 包含单柱与标签、完整指标组、轴标签与网格线、多维单对象（产品A×Q2×实际）的 Prompt、基础 commonOption 和 patch。单对象案例演示柱与标签各写一条含 `markName` 的 `markStyle` 语义条目，禁止改用 `dataGroupSpec` 整组着色降格。样式沿旧字段；首次加载将 patch 合并到 options.config，已有实例只提交 patch。运行时补齐内部身份后再保存，不能把基础图的出现当成单项编辑已完成。
 
 ## 虚实折线与排序
 
@@ -54,7 +54,7 @@
 
 Examples 是协议样例，不是可无条件复制的模板。先读每个文件的 `kind/precondition/note`。
 
-新建业务标注优先使用 [语义标注 Reference](semantic-marker-anchors.md) 中的 target、reference-line、年度声明和 quadrant 示例，按其中实际能力边界替换业务字段和值。它们是可用于开发阶段的配置片段；放入 commonOption 的 `options.config.marker` 或保存态的 `attribute.marker`，不要与同一标注的旧 coordinates 拼接。下表的 coordinate 和两阶段分区示例仅作旧配置/显式自由几何参考。
+新建业务标注优先使用 [语义标注 Reference](semantic-marker-anchors.md) 中的 target、reference-line、年度声明和 quadrant 示例，按其中实际能力边界替换业务字段和值。它们是作者语义配置片段；API/Agent 默认协议为 `editor-marker-authoring/v1`、能力为 `core-semantic-v1`，不依赖开发 query。放入 commonOption 的 `options.config.marker` 或保存态的 `attribute.marker`，不要与同一标注的旧 coordinates 拼接。下表的 coordinate 和两阶段分区示例仅作旧配置/显式自由几何参考。
 
 | 文件                                                | 覆盖目标                                                                            | 可直接作为最终 DSL                                                               |
 | --------------------------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
@@ -64,7 +64,7 @@ Examples 是协议样例，不是可无条件复制的模板。先读每个文�
 | `examples/ida-common-option-with-text.json`         | iDA 宿主示例；演示通用 `position + options` element 外壳                            | 是；`ida-light` 仅适用于明确要求 iDA 主题的场景，不隐含 `source.appName`                                            |
 | `examples/bar-series-label-and-link.json`           | 已物化 bar browserData、seriesLabel、totalLabel、barLink                            | 仅可信 fixture 场景；identity 来自 readback                                      |
 | `examples/bar-series-label-and-link-two-phase.json` | 从零创建后 readback，再开 seriesLabel                                               | 是，按 phase 顺序执行；phase 2 的 identity 用 readback 替换                      |
-| `examples/model-spec-multi-component.json`          | 多轴、图例、标题、series identity                                                   | 否，是已有图的 patch                                                             |
+| `examples/model-spec-multi-component.json`          | 多轴、图例、标题、series 与 crosshair 的 identity；演示标签字段归属 series 条目、crosshair 独立组件 | 否，是已有图的 patch                                                             |
 | `examples/single-axis-legend-elements.json`         | 单轴标签、单网格线、单图例项                                                        | 否，key 必须来自当前 runtime                                                     |
 | [bottom-center-legend-spacing.json](../examples/bottom-center-legend-spacing.json) | 新建默认图例下方居中（bottom/middle），顶部16px留白 | 图例 modelSpec 配置片段，需合并到完整配置 |
 | `examples/bottom-left-legend-spacing.json`          | 用户明确要求图例左下方；保留显式位置覆盖，非新建默认                          | 否，是已有图的最小 patch                                                         |
@@ -72,7 +72,7 @@ Examples 是协议样例，不是可无条件复制的模板。先读每个文�
 | `examples/single-label-and-mark.json`               | 普通 label、seriesLabel 引导线、单 markStyle                                        | 否，identity/key/match 必须已物化                                                |
 | `examples/label-variants.json`                      | total、pie 内外、funnel outer/transform、hierarchy/Mekko label                      | 否，每个 case 使用各自 runtime identity                                          |
 | `examples/bar-link-style-map.json`                  | barLink 全局配置与单条 line/area/label 覆盖                                         | 否，node key 必须来自当前 runtime                                                |
-| `examples/marker-intents.json`                      | 当前语义 target、阈值与标签口径的意图推理；非穷举                                  | 否，先确认业务字段与尺度，再按 semantic-marker-anchors 转为配置                  |
+| `examples/marker-intents.json`                      | 当前语义 target、阈值与标签口径的意图推理；含分组完整业务键的差异端点；非穷举                                  | 否，先确认业务字段与尺度，再按 semantic-marker-anchors 转为配置                  |
 | `examples/scatter-quadrant-two-phase.json`          | 相关性/四象限决策，以及业务阈值到两条分区线和四个 polygon 的两阶段流程              | phase 1 可直接建图；phase 2 必须使用当前 runtime 返回的百分比和 polygon identity |
 | `examples/diff-marker-coordinate-generation.json`   | 已有 coordinates 的非堆叠 growth 兼容结构                                | 仅旧定位维护时按 [兼容规则](legacy-marker-coordinates.md) 使用；新建读语义 target 示例                                       |
 | `examples/sheet-live-card-record.json`              | Sheet live commonOption + autoSync 请求                                             | 条件成立后可作为 record object                                                   |

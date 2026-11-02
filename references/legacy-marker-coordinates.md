@@ -1,6 +1,6 @@
 # 旧差异 coordinates 维护
 
-仅在需要维护已有差异标注的 `coordinates` 定位，或用户明确要求这种低层定位时读取本文。新建业务比较统一用 [semantic-marker-anchors.md](semantic-marker-anchors.md) 的 `target.from/to`；自由文本 `position`、区域自由几何等不走本文流程。共享样式见 [markers.md 第 3 节](markers.md#3-差异标注的共享样式与旧配置保留)。
+仅在需要维护已有差异标注的 `coordinates` 定位时读取本文；不用于新建智能标注。新建业务比较统一用 [semantic-marker-anchors.md](semantic-marker-anchors.md) 的 `target.from/to`；自由文本 `position`、区域自由几何等不走本文流程。共享样式见 [markers.md 第 3 节](markers.md#3-差异标注的共享样式与旧配置保留)。
 
 ## 1. 定位数据与业务值
 
@@ -56,7 +56,7 @@ coordinates: [
 ];
 ```
 
-普通内置模板没有“预声明 runtime series ID”的公共字段，`modelSpec.id` 也不创建 series 身份。若用户明确要求从零构造低层 coordinates，需先物化图表并读回真实身份后再写入；不要为省略读回而擅自改用 VChartSpec。这个限制仅适用于显式低层定位，不是新建业务标注的交付流程。
+普通内置模板没有“预声明 runtime series ID”的公共字段，`modelSpec.id` 也不创建 series 身份。上述读回仅用于已有坐标配置的维护；新建智能标注直接生成业务 target，不再从零构造 coordinates，也不为获取身份擅自切换 VChartSpec。用户要求原生导出时由 Core 实际渲染和导出，保持作者定义与导出投影分离。
 
 ## 3. 保留与验证边界
 

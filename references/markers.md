@@ -1,6 +1,6 @@
 # Marker 与分析标注完整契约
 
-新建业务标注先读 [semantic-marker-anchors.md](semantic-marker-anchors.md)，默认用 `target`。本文补充共享样式、存储位置及旧定位兼容；下列 coordinates、position 和百分比几何只用于旧配置或显式自由几何，不是新建业务标注的前置步骤。
+新建业务标注先读 [semantic-marker-anchors.md](semantic-marker-anchors.md)，默认用 `target`；API/Agent 缺省协议为 `editor-marker-authoring/v1`、能力为 `core-semantic-v1`，新生成不走旧 spec 或坐标兜底。本文补充共享样式、存储位置及旧定位兼容；下列 coordinates、position 和百分比几何只用于旧配置或显式自由几何，不是新建业务标注的前置步骤。
 
 Marker 的持久化位置分为四类，不能都塞进 `marker.markLine`：
 
@@ -104,17 +104,19 @@ type VLine = CommonMarker & { name: 'v-line'; x: number | string };
 | `coordinatesOffset` | 旧 coordinates 配置中的两端 `{x, y}` 展示偏移，也是运行时派生字段；数值表示像素，百分比字符串表示相对绘图区的偏移。新建 target 不直接填写此字段。 |
 | `type: "type-step"` | `total-diff-line`、`hierarchy-diff-line` 的折线连接类型；旧 spec 必须声明，语义 target 的生成规则见语义文档。 |
 | `connectDirection` | 两类 step 差异的连接方向：`top`、`bottom`、`left`、`right`。方向属于展示配置，不用于指定比较对象或轴绑定。默认值随图方向与差异类型不同：纵向图 total 默认 `top`、hierarchy 默认 `right`；横向条形图相反，total 默认 `right`、hierarchy 默认 `top`。 |
-| `expandDistance` | 两类 step 差异沿连接方向的扩展距离；公共类型为字符串，百分比（如 `"30%"`）相对于绘图区宽度/高度。 |
+| `expandDistance` | 两类 step 差异沿连接方向的扩展距离；公共类型为字符串，百分比（如 `"30%"`）相对于绘图区宽度/高度，也可写像素数值。 |
 
 两类 step 差异的默认形态即类型身份，按参考图直接定型：纵向图中 `total-diff-line` 是跨接两端点上方的顶部横括号，整线实线（cornerRadius 6）、仅 endSymbol 单箭头；`hierarchy-diff-line` 是端点侧面的差异竖段，multiSegment 三段折线、两侧虚线 `[3,3]` 中间实线、start+end 双端符号；横向条形图两者方向对应旋转。这些是运行时默认值，模型按参考图形态判别类型并填写业务 target，不复刻默认 `connectDirection`/`expandDistance`；显式改方向只是样式覆盖，不改变类型。完整判别规则见 [按参考图判别差异类型](semantic-marker-anchors.md#按参考图判别差异类型)。
 
 不要求模型复刻默认偏移或避让算法；运行时负责默认布局；Skill 检查显式样式配置，不承诺标签无重叠，也不为此强制渲染。
 
+零 padding 或小画布上，层级差异的默认扩展距离（绘图区剩余空间加固定值）会把差异段和标签推出画布外；此时显式给像素数值的 `expandDistance`（如 `40`）把标签收敛进画布内。
+
 编辑已有配置时：
 
 - 同一标注的 `target` 与定位字段 `coordinates` 互斥；`coordinatesOffset` 属于旧定位的展示偏移，维护旧配置时保留；语义 target 的增长线偏移使用 `offset`。
 - 仅改样式、文案或指定的格式项时，保留原有 `id`、定位及其他编辑元数据；不自动将旧 `coordinates` 反推为 `target`，不在普通保存时替换旧 `pp/percentdiff` 公式。
-- 只有需要维护已有 `coordinates` 定位，或用户明确要求这种低层定位时，才读取 [旧差异 coordinates 维护](legacy-marker-coordinates.md)。无法可靠恢复目标身份时说明缺项，不用邻项、数组序号或猜测坐标补齐。
+- 只有需要维护已有 `coordinates` 定位时，才读取 [旧差异 coordinates 维护](legacy-marker-coordinates.md)。无法可靠恢复目标身份时说明缺项，不用邻项、数组序号或猜测坐标补齐。
 - 自由文本 `position`、区域 `positions` 等自由几何是各自的定位方式，不等于差异 `coordinates`，不因此触发旧差异构造流程。
 
 ## 4. 区域标注的旧自由几何与共享样式
@@ -141,6 +143,8 @@ type MarkerAreaSpec = {
 ## 5. 点标注的旧位置与共享样式
 
 新建数据点说明或调整重叠时，按 [点标注布局流程](point-marker-layout.md) 使用以下偏移和引线样式，完成配置检查；业务目标仍使用 target，下面的 position 只用于旧位置和显式自由文本。
+
+语义柱图点默认表示成员原始值，锚定实际柱段中心。只有明确说明柱图总值时，使用 `target.aggregate: 'sum'`：锚定已核验整栈的总值端点，动态 `content: 'value'` 读取总值；`metric` 用于选择所属整栈，省略 metric 时必须能唯一确定整栈。省略 aggregate 仍表示成员原始值，不随堆叠自动改成总值。契约与示例见 [点：一个业务对象](semantic-marker-anchors.md#6-点一个业务对象)。
 
 ```ts
 type MarkPointSpec = {
